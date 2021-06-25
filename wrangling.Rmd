@@ -1,0 +1,40 @@
+---
+title: "wrangling"
+author: "J Coetsee - 19491050"
+date: "25/06/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(pacman)
+p_load("scales","cowplot", "randomForest", "haven", "dbplyr","RSQLite", "tidyverse")
+theme_set(theme_light())
+
+```
+
+# 
+
+```{r}
+dta <- read_dta("data/NIDS-CRAM_Wave1_Anon_V2.0.0.dta")
+write.csv(data, "data/nidswav1.csv")
+
+data <- read_csv("data/nidswav1.csv") %>% 
+    select(-1)
+
+```
+
+# Create SQLite database 
+
+```{r}
+mydb <- DBI::dbConnect(SQLite(), dbname = "")
+dbWriteTable(mydb, "nids", data)
+
+dbListTables(mydb)
+
+tbl(mydb, sql("SELECT pid, w1_nc_dob_y FROM nids"))
+
+```
+
