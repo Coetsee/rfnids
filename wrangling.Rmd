@@ -11,30 +11,117 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(pacman)
 p_load("scales","cowplot", "randomForest", "haven", "dbplyr","RSQLite", "tidyverse")
-theme_set(theme_light())
+theme_set(hrbrthemes::theme_ipsum())
 
 ```
 
-# 
+# Read in data to be converted into local sql database
 
 ```{r}
-dta <- read_dta("data/NIDS-CRAM_Wave1_Anon_V2.0.0.dta")
-write.csv(data, "data/nidswav1.csv")
 
 data <- read_csv("data/nidswav1.csv") %>% 
-    select(-1)
+    select(-1) 
+deriveddata <- read_csv("data/derivedwav1.csv") %>% 
+    select(-1) %>% 
+    rename(derpid = pid)
 
 ```
 
 # Create SQLite database 
 
 ```{r}
+
+#SQL db with two tables, one with the main dataset, and one where some variables have been derived by the NIDSCRAM team:
+
 mydb <- DBI::dbConnect(SQLite(), dbname = "")
 dbWriteTable(mydb, "nids", data)
-
+dbWriteTable(mydb, "derived", deriveddata)
 dbListTables(mydb)
+```
 
-tbl(mydb, sql("SELECT pid, w1_nc_dob_y FROM nids"))
+# Focus:
+
+Want to compute a RF to find look at The Effect of Lockdown on whether households have lost their main source of income. i.e. who are most likely to have lost their jobs due to the lockdown. 
+
+------------------------------------------------------
+
+
+
+# Selecting the relevant variables that have enough observations from nids table:
+
+variable I want to classify/predict:
+
+w1_nc_hhincchng = da10_9 - "Has household lost main source of income since lockdown start 27th Mar"
+
+------------------------------------------------------
+
+# Other Features: (16 in total, excluding w1_nc_hhincchng and pid)
+
+pid = Person identifier
+
+w1_nc_hhinc = da9 - Total household income after tax in April
+
+w1_nc_hhincdec1 = da8_1 - Sources of household income decreased during lockdown? 1
+
+w1_nc_hhincsrc1 = da7_1 - Sources household income in February? 1
+
+w1_nc_incgov = da5 - Do you receive any kind of government grant?
+
+w1_nc_unemdc = 	cg2 - When was the last time you worked?
+
+w1_nc_emwrk_isco_c = cd1 - Occupational code for usual work
+
+w1_nc_emtyp = cb6 - Respondent's main form of work
+
+w1_nc_enrgelec = b17 - Dwelling/house has access to electricity?
+
+w1_nc_watsrc =  b15 - Piped or tap water inside dwelling/house/in yard?
+
+w1_nc_nocld = b14 - More/less/same number kids in house now compared to before the lockdown?
+
+w1_nc_nopres = b10 - Number of people resident, including youself (don't forget babies)
+
+w1_nc_dwltyp = b9 - Type of dwelling or house living in
+
+w1_nc_moveres_apr = b7 - Moved to another house/dwelling within the province for April lockdown?
+
+w1_nc_prov = b6_1 - Province currently living in now?
+
+w1_nc_edter = b4 - Respondent successfully completed some form of tertiary studies?
+
+w1_nc_edschgrd = b3 - Highest school grade completed
+
+------------------------------------------------------
+
+# and from derived table:
+
+derpid = pid
+
+w1_nc_best_age_yrs = age in years
+
+w1_nc_age_intervals = age intervals (5 years)
+
+w1_nc_best_race = race/population group
+
+w1_nc_empl_stat = employment status
+
+w1_nc_geo2011 = geotype (based on 2011 census, traditional-urban-farms)
+
+w1_nc_best_gen = gender
+
+w1_nc_dc2011 = district council (2011 census)
+
+------------------------------------------------------
+
+# Making the complete SQL database with all variables:
+
+```{r}
+
+full <- tbl(mydb, sql("SELECT pid, w1_nc_hhincchng, w1_nc_hhinc, w1_nc_hhincdec1, w1_nc_incgov, w1_nc_hhincsrc1, w1_nc_unemdc, w1_nc_emwrk_isco_c, w1_nc_emtyp,w1_nc_enrgelec, w1_nc_watsrc, w1_nc_nocld, w1_nc_nopres, w1_nc_dwltyp, w1_nc_moveres_apr, w1_nc_prov, w1_nc_edter, w1_nc_edschgrd,w1_nc_best_age_yrs, w1_nc_age_intervals,w1_nc_best_race, w1_nc_empl_stat,w1_nc_geo2011, w1_nc_best_gen, w1_nc_dc2011  FROM nids, derived WHERE pid = derpid"))
+
+write.csv(full, "data/full.csv")
 
 ```
 
+------------------------------------------------------
+# CLEANING: Missing Data/NA's
