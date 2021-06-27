@@ -41,11 +41,9 @@ dbListTables(mydb)
 
 # Focus:
 
-Want to compute a RF to find look at The Effect of Lockdown on whether households have lost their main source of income. i.e. who are most likely to have lost their jobs due to the lockdown. 
+Want to compute a RF to look at the effect of Lockdown on whether households have lost their main source of income. i.e. who are most likely to have lost their jobs due to lockdown. 
 
 ------------------------------------------------------
-
-
 
 # Selecting the relevant variables that have enough observations from nids table:
 
@@ -117,11 +115,35 @@ w1_nc_dc2011 = district council (2011 census)
 
 ```{r}
 
-full <- tbl(mydb, sql("SELECT pid, w1_nc_hhincchng, w1_nc_hhinc, w1_nc_hhincdec1, w1_nc_incgov, w1_nc_hhincsrc1, w1_nc_unemdc, w1_nc_emwrk_isco_c, w1_nc_emtyp,w1_nc_enrgelec, w1_nc_watsrc, w1_nc_nocld, w1_nc_nopres, w1_nc_dwltyp, w1_nc_moveres_apr, w1_nc_prov, w1_nc_edter, w1_nc_edschgrd,w1_nc_best_age_yrs, w1_nc_age_intervals,w1_nc_best_race, w1_nc_empl_stat,w1_nc_geo2011, w1_nc_best_gen, w1_nc_dc2011  FROM nids, derived WHERE pid = derpid"))
-
+full <- tbl(mydb, sql("SELECT pid, w1_nc_hhincchng, w1_nc_hhinc, w1_nc_hhincdec1, w1_nc_incgov, w1_nc_hhincsrc1, w1_nc_unemdc, w1_nc_emwrk_isco_c, w1_nc_emtyp,w1_nc_enrgelec, w1_nc_watsrc, w1_nc_nocld, w1_nc_nopres, w1_nc_dwltyp, w1_nc_moveres_apr, w1_nc_prov, w1_nc_edter, w1_nc_edschgrd,w1_nc_best_age_yrs, w1_nc_age_intervals,w1_nc_best_race, w1_nc_empl_stat,w1_nc_geo2011, w1_nc_best_gen, w1_nc_dc2011  FROM nids, derived WHERE pid = derpid")) %>% 
+    collect()
 write.csv(full, "data/full.csv")
 
 ```
 
 ------------------------------------------------------
+
 # CLEANING: Missing Data/NA's
+
+```{r}
+# check amount of NA's by column
+colSums(is.na(full))
+
+# three problematic columns where NAs > 4300: w1_nc_unemdc, w1_nc_emwrk_isco_c, w1_nc_emtyp; and one where = 1689 (w1_nc_edter)
+
+#for w1_nc_emtyp, w1_nc_unemdc and w1_nc_emwrk_isco_c, the NAs are those without jobs for w1_nc_emtyp. employment status and emtyp therefore captures what we need, so we can throw out the other vars. 
+
+full %>% 
+    select(-c(w1_nc_unemdc, w1_nc_emwrk_isco_c)) %>% #drop vars with too many NAs, captured by two other vars
+    mutate(w1_nc_emtyp = replace_na(w1_nc_emtyp, 0)) %>% # replace nas with 0's, for unemployed 
+    na.omit() %>% view()
+    
+
+
+
+
+```
+
+
+
+

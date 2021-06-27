@@ -1,8 +1,9 @@
-\documentclass[preprint, authoryear]{article}
+\documentclass[11pt,preprint, authoryear]{elsarticle}
 
 \usepackage{lmodern}
 %%%% My spacing
 \usepackage{setspace}
+\setstretch{1.2}
 \DeclareMathSizes{12}{14}{10}{10}
 
 % Wrap around which gives all figures included the [H] command, or places it "here". This can be tedious to code in Rmarkdown.
@@ -48,7 +49,7 @@
 \usepackage[round]{natbib}
 
 \usepackage{longtable}
-\usepackage[margin=cm,bottom=cm,top=cm, includefoot]{geometry}
+\usepackage[margin=2.3cm,bottom=2cm,top=2.5cm, includefoot]{geometry}
 \usepackage{fancyhdr}
 \usepackage[bottom, hang, flushmargin]{footmisc}
 \usepackage{graphicx}
@@ -58,12 +59,21 @@
 \setlength{\parindent}{0cm}
 \setlength{\parskip}{1.3ex plus 0.5ex minus 0.3ex}
 \usepackage{textcomp}
-\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\headrulewidth}{0.2pt}
+\renewcommand{\footrulewidth}{0.3pt}
 
 \usepackage{array}
 \newcolumntype{x}[1]{>{\centering\arraybackslash\hspace{0pt}}p{#1}}
 
 %%%%  Remove the "preprint submitted to" part. Don't worry about this either, it just looks better without it:
+\makeatletter
+\def\ps@pprintTitle{%
+  \let\@oddhead\@empty
+  \let\@evenhead\@empty
+  \let\@oddfoot\@empty
+  \let\@evenfoot\@oddfoot
+}
+\makeatother
 
  \def\tightlist{} % This allows for subbullets!
 
@@ -117,7 +127,7 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
-\setcounter{secnumdepth}{0}
+\setcounter{secnumdepth}{5}
 
 %%% Use protect on footnotes to avoid problems with footnotes in titles
 \let\rmarkdownfootnote\footnote%
@@ -125,6 +135,31 @@
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
 
 %%% Include extra packages specified by user
+
+%%% Hard setting column skips for reports - this ensures greater consistency and control over the length settings in the document.
+%% page layout
+%% paragraphs
+\setlength{\baselineskip}{12pt plus 0pt minus 0pt}
+\setlength{\parskip}{12pt plus 0pt minus 0pt}
+\setlength{\parindent}{0pt plus 0pt minus 0pt}
+%% floats
+\setlength{\floatsep}{12pt plus 0 pt minus 0pt}
+\setlength{\textfloatsep}{20pt plus 0pt minus 0pt}
+\setlength{\intextsep}{14pt plus 0pt minus 0pt}
+\setlength{\dbltextfloatsep}{20pt plus 0pt minus 0pt}
+\setlength{\dblfloatsep}{14pt plus 0pt minus 0pt}
+%% maths
+\setlength{\abovedisplayskip}{12pt plus 0pt minus 0pt}
+\setlength{\belowdisplayskip}{12pt plus 0pt minus 0pt}
+%% lists
+\setlength{\topsep}{10pt plus 0pt minus 0pt}
+\setlength{\partopsep}{3pt plus 0pt minus 0pt}
+\setlength{\itemsep}{5pt plus 0pt minus 0pt}
+\setlength{\labelsep}{8mm plus 0mm minus 0mm}
+\setlength{\parsep}{\the\parskip}
+\setlength{\listparindent}{\the\parindent}
+%% verbatim
+\setlength{\fboxsep}{5pt plus 0pt minus 0pt}
 
 
 
@@ -134,16 +169,30 @@
 
 \begin{frontmatter}  %
 
-\title{}
+\title{Random Forest and the Effects of the Lockdown on household income,
+evidence from Nids-Cram Wave 1'}
 
 % Set to FALSE if wanting to remove title (for submission)
+
+
+
+
+\author[Add1]{Johannes Coetsee}
+\ead{19491050@sun.ac.za - https://github.com/Coetsee/PVAR\_19491050}
+
+
+
+
+
+\address[Add1]{Stellenbosch University}
+
 
 
 \vspace{1cm}
 
 \begin{keyword}
 \footnotesize{
- \\ \vspace{0.3cm}
+Panel vector autoregression \sep Income Inequality \sep Economic Growth \\ \vspace{0.3cm}
 \textit{JEL classification} 
 }
 \end{keyword}
@@ -157,9 +206,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagestyle{fancy}
 \chead{}
-\rhead{}
+\rhead{June 2021 - Data Science 871}
 \lfoot{}
-\rfoot{}
+\rfoot{\footnotesize Page \thepage}
 \lhead{}
 %\rfoot{\footnotesize Page \thepage } % "e.g. Page 2"
 \cfoot{}
@@ -173,123 +222,6 @@
 
 
 
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
-title: ``Helping You Write Academic Papers in R using Texevier''
-subtitle: ``Data Science 871 - June 2021''
-
-documentclass: ``elsarticle''
-
-\hypertarget{thesis-title-optional---set-to-false-by-default.}{%
-\section{--------- Thesis title (Optional - set to FALSE by
-default).}\label{thesis-title-optional---set-to-false-by-default.}}
-
-\hypertarget{you-can-move-the-details-below-around-as-you-please.}{%
-\section{You can move the details below around as you
-please.}\label{you-can-move-the-details-below-around-as-you-please.}}
-
-Thesis\_FP: FALSE
-
-\hypertarget{front-page}{%
-\section{--------- Front Page}\label{front-page}}
-
-\hypertarget{comment-follow-this-pattern-for-up-to-5-authors}{%
-\section{Comment: ----- Follow this pattern for up to 5
-authors}\label{comment-follow-this-pattern-for-up-to-5-authors}}
-
-AddTitle: TRUE \# Use FALSE when submitting to peer reviewed platform.
-This will remove author names. Author1: ``Johannes Coetsee (19491050)''
-\# First Author - note the thanks message displayed as an italic
-footnote of first page. Ref1: ``Stellenbosch University'' \# First
-Author's Affiliation Email1:
-``19491050\textbackslash{}({\textbf{???}})'' \# First Author's Email
-address
-
-CorrespAuthor\_1: TRUE \# If corresponding author is author 3, e.g., use
-CorrespAuthor\_3: TRUE
-
-keywords: ``Random Forest'' \# Use \textbackslash sep to separate
-\#JELCodes: ``L250 \textbackslash sep L100''
-
-\hypertarget{manage-headers-and-footers}{%
-\section{----- Manage headers and
-footers:}\label{manage-headers-and-footers}}
-
-\#BottomLFooter: \(Title\) \#BottomCFooter: \#TopLHeader: \leftmark \#
-Adds section name at topleft. Remove comment to add it. BottomRFooter:
-``\textbackslash footnotesize Page \textbackslash thepage'' \# Add a
-`\#' before this line to remove footer. addtoprule: TRUE addfootrule:
-TRUE \# Use if footers added. Add `\#' to remove line.
-
-\hypertarget{page-margins}{%
-\section{--------- page margins:}\label{page-margins}}
-
-margin: 2.3 \# Sides bottom: 2 \# bottom top: 2.5 \# Top
-HardSet\_layout: TRUE \# Hard-set the spacing of words in your document.
-This will stop LaTeX squashing text to fit on pages, e.g. \# This is
-done by hard-setting the spacing dimensions. Set to FALSE if you want
-LaTeX to optimize this for your paper.
-
-\hypertarget{line-numbers}{%
-\section{--------- Line numbers}\label{line-numbers}}
-
-linenumbers: FALSE \# Used when submitting to journal
-
-\hypertarget{references-settings}{%
-\section{---------- References settings:}\label{references-settings}}
-
-\hypertarget{you-can-download-cls-format-here-httpswww.zotero.org---simply-search-for-your-institution.-you-can-also-edit-and-save-cls-formats-here-httpseditor.citationstyles.orgabout}{%
-\section{\texorpdfstring{You can download cls format here:
-\url{https://www.zotero.org/} - simply search for your institution. You
-can also edit and save cls formats here:
-\url{https://editor.citationstyles.org/about/}}{You can download cls format here: https://www.zotero.org/ - simply search for your institution. You can also edit and save cls formats here: https://editor.citationstyles.org/about/}}\label{you-can-download-cls-format-here-httpswww.zotero.org---simply-search-for-your-institution.-you-can-also-edit-and-save-cls-formats-here-httpseditor.citationstyles.orgabout}}
-
-\hypertarget{hit-download-store-it-in-tex-folder-and-change-reference-below---easy.}{%
-\section{Hit download, store it in Tex/ folder, and change reference
-below -
-easy.}\label{hit-download-store-it-in-tex-folder-and-change-reference-below---easy.}}
-
-bibliography: Tex/ref.bib \# Do not edit: Keep this naming convention
-and location. csl: Tex/harvard-stellenbosch-university.csl \#
-referencing format used. \# By default, the bibliography only displays
-the cited references. If you want to change this, you can comment out
-one of the following: \#nocite: `({\textbf{???}})' \# Add all items in
-bibliography, whether cited or not \# nocite: \textbar{} \# add specific
-references that aren't cited \# ({\textbf{???}}) \# ({\textbf{???}})
-
-\hypertarget{general}{%
-\section{---------- General:}\label{general}}
-
-RemovePreprintSubmittedTo: TRUE \# Removes the `preprint submitted
-to\ldots{}' at bottom of titlepage Journal: ``Journal of Finance'' \#
-Journal that the paper will be submitting to, if
-RemovePreprintSubmittedTo is set to TRUE. toc: FALSE \# Add a table of
-contents numbersections: TRUE \# Should sections (and thus figures and
-tables) be numbered? fontsize: 11pt \# Set fontsize linestretch: 1.2 \#
-Set distance between lines. link-citations: TRUE \# This creates dynamic
-links to the papers in reference list.
-
-\hypertarget{adding-additional-latex-packages}{%
-\subsubsection{Adding additional latex
-packages:}\label{adding-additional-latex-packages}}
-
-\hypertarget{header-includes}{%
-\section{header-includes:}\label{header-includes}}
-
-\# -
-
-\usepackage{colortbl}
-
-\hypertarget{add-additional-packages-here.}{%
-\section{Add additional packages
-here.}\label{add-additional-packages-here.}}
-
-output: pdf\_document: keep\_tex: TRUE template: Tex/TexDefault.txt
-fig\_width: 3.5 \# Adjust default figure sizes. This can also be done in
-the chunks of the text. fig\_height: 3.5 abstract: \textbar{}
-
-\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
-
 \hypertarget{introduction}{%
 \section{\texorpdfstring{Introduction
 \label{Introduction}}{Introduction }}\label{introduction}}
@@ -301,6 +233,35 @@ the chunks of the text. fig\_height: 3.5 abstract: \textbar{}
 \hypertarget{methodology}{%
 \section{\texorpdfstring{Methodology
 \label{Meth}}{Methodology }}\label{methodology}}
+
+\hypertarget{random-forest}{%
+\subsection{random forest}\label{random-forest}}
+
+\hypertarget{sampling}{%
+\subsection{sampling}\label{sampling}}
+
+\hypertarget{bias-variance-trade-off}{%
+\subsection{bias variance trade-off}\label{bias-variance-trade-off}}
+
+\hypertarget{prediction-and-confusion-matrix-train-vs-test-data}{%
+\subsection{prediction and confusion matrix, train vs test
+data}\label{prediction-and-confusion-matrix-train-vs-test-data}}
+
+\hypertarget{error-rate-and-bootstrap-samples}{%
+\subsection{error rate and bootstrap
+samples}\label{error-rate-and-bootstrap-samples}}
+
+\hypertarget{number-of-nodes}{%
+\subsection{number of nodes}\label{number-of-nodes}}
+
+\hypertarget{hyperparameter-tuning}{%
+\subsection{hyperparameter tuning}\label{hyperparameter-tuning}}
+
+\hypertarget{variable-importance}{%
+\subsection{variable importance}\label{variable-importance}}
+
+\hypertarget{partial-dependence-plot}{%
+\subsection{partial dependence plot}\label{partial-dependence-plot}}
 
 \hypertarget{results}{%
 \section{Results}\label{results}}

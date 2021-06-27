@@ -1,0 +1,24 @@
+---
+title: "README"
+author: "J Coetsee - 19491050"
+date: "27/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Purpose:
+
+In this project, I attempt to implement a Random Forest on the NidsCram wave 1 data. The purpose is to classify and predict the people/households who were most likely to lose their main source of income due to the lockdown implemented in March 2020. 
+
+# Files:
+
+*rfnids.rmd is the write up file which creates the pdf report output. 
+
+*wrangling.rmd is where a local sql database is created and data is cleaned. 
+
+*
+
+*
