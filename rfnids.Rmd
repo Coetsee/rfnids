@@ -3,7 +3,7 @@
 # Remove comments and add values where applicable.
 # The descriptions below should be self-explanatory
 
-title: "Random Forest and the Effects of the Lockdown on household income, evidence from Nids-Cram Wave 1'"
+title: "Random Forest and the Effects of the Lockdown on Household Income - Evidence From NIDS-CRAM Wave 1"
 subtitle: "June 2021 - Data Science 871"
 
 documentclass: "elsarticle"
@@ -25,11 +25,11 @@ Thesis_FP: FALSE
 # --------- Front Page
 # Comment: ----- Follow this pattern for up to 5 authors
 AddTitle: TRUE # Use FALSE when submitting to peer reviewed platform. This will remove author names.
-Author1: "Johannes Coetsee"  # First Author - note the thanks message displayed as an italic footnote of first page.
+Author1: "Johannes Coetsee - 19491050"  # First Author - note the thanks message displayed as an italic footnote of first page.
 Ref1: "Stellenbosch University" # First Author's Affiliation
-Email1: "19491050\\@sun.ac.za - https\\://github.com/Coetsee/PVAR_19491050" # First Author's Email address
+Email1: "19491050\\@sun.ac.za - https\\://github.com/Coetsee" # First Author's Email address
 
-keywords: "Panel vector autoregression \\sep Income Inequality \\sep Economic Growth " # Use \\sep to separate
+#keywords: "Panel vector autoregression \\sep Income Inequality \\sep Economic Growth " # Use \\sep to separate
 #JELCodes: "L250 \\sep L100"
 
 # ----- Manage headers and footers:
@@ -58,7 +58,7 @@ csl: Tex/harvard-stellenbosch-university.csl # referencing format used.
 
 # ---------- General:
 RemovePreprintSubmittedTo: TRUE  # Removes the 'preprint submitted to...' at bottom of titlepage
-Journal: "Time Series Econometrics 871"   # Journal that the paper will be submitting to, if RemovePreprintSubmittedTo is set to TRUE.
+Journal: ""   # Journal that the paper will be submitting to, if RemovePreprintSubmittedTo is set to TRUE.
 toc: FALSE                       # Add a table of contents
 numbersections: TRUE             # Should sections (and thus figures and tables) be numbered?
 fontsize: 11pt                  # Set fontsize
@@ -96,28 +96,44 @@ library(tidyverse)
 
 # Introduction \label{Introduction}
 
-# Data  {-}
+The purpose of this paper is to report on the implementation of a Random Forest (RF) algorithm for a classification-type problem, namely, to classify which individuals and households were more likely to lose their main source of income due to the coronavirus and subsequent lockdown in South Africa in March and April 2020. 
+
+RF is well-suited for these types of problems
+
+# Data  \label{Data}
+
+This study utilises the first wave of the National Income Dynamics Study - Coronavirus Rapid Mobile Survey 2020 (NIDS-CRAM) dataset, a longitudinal telephonic household survey conducted by the Southern Africa Labour and Development Research Unit (SALDRU) in April and May 2020. NIDS-CRAM investigates the various social and economic effects of the national lockdown implemented in March 2020, and more broadly, the consequences of the global pandemic on the South African context.
+
+In total, the dataset consists of 21 features, which is reported in Table \ref{table} below, with 6838 observations for each feature. The main variable of interest is 'Income.Change' - a binary variable where a value of 1 indicates that the household has lost their main source of income, whilst 2 indicates that it has not. The question asked to respondents reads as : "Has your household lost its main source of income since the lockdown started on 27th March?"
+
+## Missing Values and Transformations {-}
+
+Some missing values are imputed using simple median-replacement, where the missing value is replaced with the median value computed on the rest of the data. This method is preferred for continuous variables, such as, in our case, household income. Furthermore, the median is preferred to the mean as one would expect there to be large outliers to the top of the income spectrum rather than the bottom, whilst the missing values are more likely to be households with a lower income. Furthermore, for the 'Employment.Type' feature, missing values are replaced by 0's to indicate 'unemployed', as this survey question was only asked to those who were employed. Those who refused to respond or did not know their main form of work, were indicated as missing and kept in the data. 
+
+For the categorical variables, missing values are imputed in two steps: first, NAs are replaced by the most frequent level in the column, and second, missing values are then imputed in the predictor data by using the proximity matrix from a random forest 
+
+
+
 
 #  Methodology \label{Meth}
 
-## random forest
+## The Random Forest Algorithm {-}
 
+## Sampling {-}
 
-## sampling
+## bias-variance trade-off {-}
 
-## bias variance trade-off
+## prediction and confusion matrix, train vs test data {-}
 
-## prediction and confusion matrix, train vs test data
+## error rate and bootstrap samples {-}
 
-## error rate and bootstrap samples
+## number of nodes {-}
 
-## number of nodes
+## hyperparameter tuning {-}
 
-## hyperparameter tuning
+## variable importance {-}
 
-## variable importance
-
-## partial dependence plot 
+## partial dependence plot {-}
 
 # Results
 

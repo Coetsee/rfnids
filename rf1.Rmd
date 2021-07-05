@@ -1,0 +1,101 @@
+---
+title: "Model1"
+author: "J Coetsee - 19491050"
+date: "26/06/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tictoc, parallel, pbapply, future, future.apply,
+    furrr, RhpcBLASctl, memoise, here, caret, ranger, tidyverse)
+plan(multisession)
+
+```
+
+
+
+```{r}
+# Read Data
+data <- read.csv("data/full.csv", header = TRUE)
+str(data)
+
+# feature of interest must be factor for classification
+data <- data %>% 
+    select(-X, -pid) %>% 
+    mutate(w1_nc_hhincchng = as.factor(w1_nc_hhincchng),
+           w1_nc_mdbdc2011 = as.character(w1_nc_mdbdc2011))
+
+# Data Partition
+set.seed(123)
+ind <- sample(2, nrow(data), replace = TRUE, prob = c(0.7, 0.3))
+train <- data[ind==1,]
+test <- data[ind==2,]
+
+# Number of features:
+n_features <- length(setdiff(names(data), "w1_nc_hhincchng"))
+
+
+
+# Random Forest with randomForest package
+library(randomForest)
+set.seed(123)
+rf1 <- randomForest(w1_nc_hhincchng~., data=train,
+                   ntree = 300,
+                   mtry = 4,
+                   importance = TRUE,
+                   proximity = TRUE)
+
+print(rf1)
+attributes(rf1)
+
+# Prediction & Confusion Matrix - train data
+library(caret)
+
+p1 <- predict(rf1, train)
+confusionMatrix(p1, train$w1_nc_hhincchng)
+
+
+# Prediction & Confusion Matrix - test data
+p2 <- predict(rf1, test)
+confusionMatrix(p2, test$w1_nc_hhincchng)
+
+# Error rate of Random Forest
+plot(rf1)
+
+# Tune mtry
+t <- tuneRF(train[,-1], train[,1],
+       stepFactor = 0.5,
+       plot = TRUE,
+       ntreeTry = 300,
+       trace = TRUE,
+       improve = 0.05)
+
+# No. of nodes for the trees
+hist(treesize(rf1),
+     main = "No. of Nodes for the Trees",
+     col = "green")
+
+# Variable Importance
+varImpPlot(rf1,
+           sort = T,
+           n.var = 10,
+           main = "Top 10 - Variable Importance")
+importance(rf1)
+varUsed(rf1)
+
+# Partial Dependence Plot
+partialPlot(rf1, train, w1_nc_hhinc, "2")
+
+# Extract Single Tree
+getTree(rf1, 1, labelVar = TRUE)
+
+# Multi-dimensional Scaling Plot of Proximity Matrix
+MDSplot(rf1, train$w1_nc_hhincchng)
+
+
+
+```
+

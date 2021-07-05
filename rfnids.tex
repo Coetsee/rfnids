@@ -169,16 +169,16 @@
 
 \begin{frontmatter}  %
 
-\title{Random Forest and the Effects of the Lockdown on household income,
-evidence from Nids-Cram Wave 1'}
+\title{Random Forest and the Effects of the Lockdown on Household Income -
+Evidence From NIDS-CRAM Wave 1}
 
 % Set to FALSE if wanting to remove title (for submission)
 
 
 
 
-\author[Add1]{Johannes Coetsee}
-\ead{19491050@sun.ac.za - https://github.com/Coetsee/PVAR\_19491050}
+\author[Add1]{Johannes Coetsee - 19491050}
+\ead{19491050@sun.ac.za - https://github.com/Coetsee}
 
 
 
@@ -192,7 +192,7 @@ evidence from Nids-Cram Wave 1'}
 
 \begin{keyword}
 \footnotesize{
-Panel vector autoregression \sep Income Inequality \sep Economic Growth \\ \vspace{0.3cm}
+ \\ \vspace{0.3cm}
 \textit{JEL classification} 
 }
 \end{keyword}
@@ -226,9 +226,42 @@ Panel vector autoregression \sep Income Inequality \sep Economic Growth \\ \vspa
 \section{\texorpdfstring{Introduction
 \label{Introduction}}{Introduction }}\label{introduction}}
 
+The purpose of this paper is to report on the implementation of a Random
+Forest (RF) algorithm for a classification-type problem, namely, to
+classify which individuals and households were more likely to lose their
+main source of income due to the coronavirus and subsequent lockdown in
+South Africa in March and April 2020.
+
+RF is well-suited for these types of problems
+
 \hypertarget{data}{%
 \section*{Data}\label{data}}
 \addcontentsline{toc}{section}{Data}
+
+This study utilises the first wave of the National Income Dynamics Study
+- Coronavirus Rapid Mobile Survey 2020 (NIDS-CRAM) dataset, a
+longitudinal telephonic household survey conducted by the Southern
+Africa Labour and Development Research Unit (SALDRU) in April and May
+2020. NIDS-CRAM investigates the various social and economic effects of
+the national lockdown implemented in March 2020, and more broadly, the
+consequences of the global pandemic on the South African context.
+
+In total, the dataset consists of 21 features, which is reported in
+Table \ref{table} below, with 6838 observations for each feature. The
+main variable of interest is `Income.Change' - a binary variable where a
+value of 1 indicates that the household has lost their main source of
+income, whilst 2 indicates that it has not. The question asked to
+respondents reads as : ``Has your household lost its main source of
+income since the lockdown started on 27th March?''
+
+\hypertarget{missing-values-and-transformations}{%
+\subsection{Missing Values and
+Transformations}\label{missing-values-and-transformations}}
+
+Some missing values are imputed using simple median-replacement, where
+the missing value is replaced with the median value computed on the rest
+of the data. This method is preferred for continuous variables over
+other data types.
 
 \hypertarget{methodology}{%
 \section{\texorpdfstring{Methodology

@@ -6,8 +6,11 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
+#chunk options
 knitr::opts_chunk$set(echo = TRUE)
 
+#source functions from code folder:
+list.files('code/', full.names = T, recursive = T) %>% as.list() %>% walk(~source(.))
 
 library(pacman)
 p_load("scales","cowplot", "randomForest", "haven", "dbplyr","RSQLite", "tidyverse")
@@ -18,12 +21,23 @@ theme_set(hrbrthemes::theme_ipsum())
 # Read in data to be converted into local sql database
 
 ```{r}
+#select and write derived data
+der <- read_dta("data/derived_NIDS-CRAM_Wave1_Anon_V2.0.0.dta") 
 
+der <- der %>% 
+    select(pid, w1_nc_best_age_yrs, w1_nc_age_intervals, w1_nc_best_race, w1_nc_empl_stat, w1_nc_geo2011, w1_nc_best_gen, w1_nc_mdbdc2011)
+
+write.csv(der, "data/derivedwav1.csv")
+
+#read data
 data <- read_csv("data/nidswav1.csv") %>% 
     select(-1) 
+
 deriveddata <- read_csv("data/derivedwav1.csv") %>% 
     select(-1) %>% 
     rename(derpid = pid)
+
+
 
 ```
 
@@ -57,7 +71,7 @@ w1_nc_hhincchng = da10_9 - "Has household lost main source of income since lockd
 
 pid = Person identifier
 
-w1_nc_hhinc = da9 - Total household income after tax in April
+w1_nc_hhinc = da9 - Total household income after tax in April # 2227 reported doesn't know.
 
 w1_nc_hhincdec1 = da8_1 - Sources of household income decreased during lockdown? 1
 
@@ -107,7 +121,7 @@ w1_nc_geo2011 = geotype (based on 2011 census, traditional-urban-farms)
 
 w1_nc_best_gen = gender
 
-w1_nc_dc2011 = district council (2011 census)
+w1_nc_mdbdc2011 = municipality (2011 census)
 
 ------------------------------------------------------
 
@@ -115,9 +129,8 @@ w1_nc_dc2011 = district council (2011 census)
 
 ```{r}
 
-full <- tbl(mydb, sql("SELECT pid, w1_nc_hhincchng, w1_nc_hhinc, w1_nc_hhincdec1, w1_nc_incgov, w1_nc_hhincsrc1, w1_nc_unemdc, w1_nc_emwrk_isco_c, w1_nc_emtyp,w1_nc_enrgelec, w1_nc_watsrc, w1_nc_nocld, w1_nc_nopres, w1_nc_dwltyp, w1_nc_moveres_apr, w1_nc_prov, w1_nc_edter, w1_nc_edschgrd,w1_nc_best_age_yrs, w1_nc_age_intervals,w1_nc_best_race, w1_nc_empl_stat,w1_nc_geo2011, w1_nc_best_gen, w1_nc_dc2011  FROM nids, derived WHERE pid = derpid")) %>% 
+full <- tbl(mydb, sql("SELECT pid, w1_nc_hhincchng, w1_nc_hhinc, w1_nc_hhincdec1, w1_nc_incgov, w1_nc_hhincsrc1, w1_nc_unemdc, w1_nc_emwrk_isco_c, w1_nc_emtyp,w1_nc_enrgelec, w1_nc_watsrc, w1_nc_nocld, w1_nc_nopres, w1_nc_dwltyp, w1_nc_moveres_apr, w1_nc_prov, w1_nc_edter, w1_nc_edschgrd,w1_nc_best_age_yrs, w1_nc_age_intervals,w1_nc_best_race, w1_nc_empl_stat,w1_nc_geo2011, w1_nc_best_gen, w1_nc_mdbdc2011  FROM nids, derived WHERE pid = derpid")) %>% 
     collect()
-write.csv(full, "data/full.csv")
 
 ```
 
@@ -129,16 +142,69 @@ write.csv(full, "data/full.csv")
 # check amount of NA's by column
 colSums(is.na(full))
 
+full <- full %>% 
+    mutate(w1_nc_hhincchng = ifelse(w1_nc_hhincchng < 0, NA, w1_nc_hhincchng), # hhincome change, change to NA, there are very few values. need no ,missing for this var
+           w1_nc_hhinc = ifelse(w1_nc_hhinc < 0, 2800, w1_nc_hhinc), # missing
+           w1_nc_hhincdec1 = ifelse(w1_nc_hhincdec1 < 0, -3, w1_nc_hhincdec1), #missing
+           w1_nc_incgov = ifelse(w1_nc_incgov < 0, -3, w1_nc_incgov), #missing
+           w1_nc_hhincsrc1 = ifelse(w1_nc_hhincsrc1 < 0, -3, w1_nc_hhincsrc1), #missing
+           w1_nc_emtyp = ifelse(w1_nc_emtyp < 0, -3, w1_nc_emtyp), #missing
+           w1_nc_enrgelec = ifelse(w1_nc_enrgelec < 0, -3, w1_nc_enrgelec),#missing
+           w1_nc_watsrc = ifelse(w1_nc_watsrc < 0, -3, w1_nc_watsrc),#missing
+           w1_nc_watsrc = ifelse(w1_nc_watsrc < 0, -3, w1_nc_watsrc),#missing
+           w1_nc_nocld = ifelse(w1_nc_nocld < 0, -3, w1_nc_nocld),#missing
+           w1_nc_nopres = ifelse(w1_nc_nocld < 0, -3, w1_nc_nocld),#missing
+           w1_nc_dwltyp = ifelse(w1_nc_dwltyp < 0, -3, w1_nc_dwltyp), #missing
+           w1_nc_moveres_apr = ifelse(w1_nc_moveres_apr < 0, -3, w1_nc_moveres_apr),
+           w1_nc_prov = ifelse(w1_nc_prov < 0, -3, w1_nc_prov),
+           w1_nc_prov = ifelse(w1_nc_prov == 10, -3, w1_nc_prov),
+           w1_nc_edter = ifelse(w1_nc_edter < 0, -3, w1_nc_edter),
+           w1_nc_geo2011 = ifelse(w1_nc_geo2011 < 0, -3, w1_nc_geo2011),
+           w1_nc_empl_stat = ifelse(w1_nc_empl_stat < 0, -3, w1_nc_empl_stat))
+
 # three problematic columns where NAs > 4300: w1_nc_unemdc, w1_nc_emwrk_isco_c, w1_nc_emtyp; and one where = 1689 (w1_nc_edter)
 
-#for w1_nc_emtyp, w1_nc_unemdc and w1_nc_emwrk_isco_c, the NAs are those without jobs for w1_nc_emtyp. employment status and emtyp therefore captures what we need, so we can throw out the other vars. 
+#for w1_nc_emtyp, w1_nc_unemdc and w1_nc_emwrk_isco_c, the NAs are those without jobs for w1_nc_emtyp. employment status and emtyp therefore captures what we need, so we can throw out the other vars. Similarly, edter gives tertiary education. In this, we assume people who have tertiary would say yes, while the rest do not, so NAs are converted to no's, or 0's
+
+full <- full %>% 
+    select(-c(w1_nc_unemdc, w1_nc_emwrk_isco_c)) %>% #drop vars with too many NAs, captured by two other vars
+    mutate(w1_nc_emtyp = replace_na(w1_nc_emtyp, 0),  # replace nas with 0's, for unemployed 
+           w1_nc_edter = replace_na(w1_nc_edter, 2)) %>% # replace tertiary educ na with 2 (no)
+    na.omit()
+
+# Changing colnames:
+full <- full %>% 
+    rename(  "Income Change" = w1_nc_hhincchng,
+             "PID" = pid,
+             "HH Income Apr" = w1_nc_hhinc,
+             "Sources Income Decreased" = w1_nc_hhincdec1,
+             "Grant" = w1_nc_incgov,
+             "Sources HH Income" = w1_nc_hhincsrc1,
+             "Employment Type" = w1_nc_emtyp,
+             "Electricity Access" = w1_nc_enrgelec,
+             "Water Access" = w1_nc_watsrc,
+             "Children Change" = w1_nc_nocld,
+             "HH Size " = w1_nc_nopres,
+             "Dwelling Type" = w1_nc_dwltyp,
+             "Moved" = w1_nc_moveres_apr,
+             "Province" = w1_nc_prov,
+             "Tertiary" = w1_nc_edter,
+             "Education" = w1_nc_edschgrd,
+             "Age" = w1_nc_best_age_yrs,
+             "Age Interval" = w1_nc_age_intervals,
+             "Race" = w1_nc_best_race,
+             "Employed" = w1_nc_empl_stat,
+             "Geo Type" = w1_nc_geo2011,
+             "Gender" = w1_nc_best_gen,
+             "District Council" = w1_nc_mdbdc2011)
+
+write.csv(full, "data/full.csv")
+
+#getting median for hhincome - chose median as the people who did not reply on the survey - would be more likely to earn lower than mean income:
 
 full %>% 
-    select(-c(w1_nc_unemdc, w1_nc_emwrk_isco_c)) %>% #drop vars with too many NAs, captured by two other vars
-    mutate(w1_nc_emtyp = replace_na(w1_nc_emtyp, 0)) %>% # replace nas with 0's, for unemployed 
-    na.omit() %>% view()
-    
-
+    filter(w1_nc_hhinc > 0) %>% 
+    summary(w1_nc_hhinc)
 
 
 

@@ -1,0 +1,112 @@
+---
+title: "Untitled"
+author: "J Coetsee - 19491050"
+date: "04/07/2021"
+output: html_document
+---
+
+#test for imputation:
+
+```{r}
+data <- read.csv("data/full.csv", header = TRUE)
+
+data <- data %>% 
+    select(-c(w1_nc_unemdc, w1_nc_emwrk_isco_c)) %>% #drop vars with too many NAs, captured by two other vars
+    mutate(w1_nc_emtyp = replace_na(w1_nc_emtyp, 0),  # replace nas with 0's, for unemployed 
+           w1_nc_edter = replace_na(w1_nc_edter, 2))
+
+data <- data %>% 
+    mutate(w1_nc_hhincchng = ifelse(w1_nc_hhincchng < 0, NA, w1_nc_hhincchng), # hhincome change, change to NA, there are very few values. need no ,missing for this var
+           w1_nc_hhinc = ifelse(w1_nc_hhinc < 0, NA, w1_nc_hhinc), # missing
+           w1_nc_hhincdec1 = ifelse(w1_nc_hhincdec1 < 0, NA, w1_nc_hhincdec1), #missing
+           w1_nc_incgov = ifelse(w1_nc_incgov < 0, NA, w1_nc_incgov), #missing
+           w1_nc_hhincsrc1 = ifelse(w1_nc_hhincsrc1 < 0, NA, w1_nc_hhincsrc1), #missing
+           w1_nc_emtyp = ifelse(w1_nc_emtyp < 0, NA, w1_nc_emtyp), #missing
+           w1_nc_enrgelec = ifelse(w1_nc_enrgelec < 0, NA, w1_nc_enrgelec),#missing
+           w1_nc_watsrc = ifelse(w1_nc_watsrc < 0, NA, w1_nc_watsrc),#missing
+           w1_nc_nocld = ifelse(w1_nc_nocld < 0, NA, w1_nc_nocld),#missing
+           w1_nc_nopres = ifelse(w1_nc_nopres < 0, NA, w1_nc_nopres),#missing
+           w1_nc_dwltyp = ifelse(w1_nc_dwltyp < 0, NA, w1_nc_dwltyp), #missing
+           w1_nc_moveres_apr = ifelse(w1_nc_moveres_apr < 0, NA, w1_nc_moveres_apr),
+           w1_nc_prov = ifelse(w1_nc_prov < 0,NA, w1_nc_prov),
+           w1_nc_prov = ifelse(w1_nc_prov == 10, NA, w1_nc_prov),
+           w1_nc_edter = ifelse(w1_nc_edter < 0, NA, w1_nc_edter),
+           w1_nc_geo2011 = ifelse(w1_nc_geo2011 < 0, NA, w1_nc_geo2011),
+           w1_nc_empl_stat = ifelse(w1_nc_empl_stat < 0,NA, w1_nc_empl_stat))
+
+colSums(is.na(data))
+
+data <- data %>% 
+    rename(  "Income Change" = w1_nc_hhincchng,
+             "PID" = pid,
+             "HH Income Apr" = w1_nc_hhinc,
+             "Sources Income Decreased" = w1_nc_hhincdec1,
+             "Grant" = w1_nc_incgov,
+             "Sources HH Income" = w1_nc_hhincsrc1,
+             "Employment Type" = w1_nc_emtyp,
+             "Electricity Access" = w1_nc_enrgelec,
+             "Water Access" = w1_nc_watsrc,
+             "Children Change" = w1_nc_nocld,
+             "HH Size " = w1_nc_nopres,
+             "Dwelling Type" = w1_nc_dwltyp,
+             "Moved" = w1_nc_moveres_apr,
+             "Province" = w1_nc_prov,
+             "Tertiary" = w1_nc_edter,
+             "Education" = w1_nc_edschgrd,
+             "Age" = w1_nc_best_age_yrs,
+             "Age Interval" = w1_nc_age_intervals,
+             "Race" = w1_nc_best_race,
+             "Employed" = w1_nc_empl_stat,
+             "Geo Type" = w1_nc_geo2011,
+             "Gender" = w1_nc_best_gen,
+             "District Council" = w1_nc_mdbdc2011)
+
+# dropping cols and mutating data classes to factor for classification
+
+factor_cols <- c("Income Change", "District Council", "Sources Income Decreased", "Employed", "Employment Type", "Sources HH Income", "Children Change", "Dwelling Type", "Province","Race","Geo Type")
+
+data <- data %>% 
+    mutate_at(factor_cols, funs(as.factor(.)))
+
+data <- data$ %>% 
+    select(-X, -PID)
+
+#making dummy variables:
+
+moved, grant, elec, water, tertiary, gender
+
+data <- data %>% 
+    mutate(Grant = ifelse(Grant == 2, 0, Grant),
+           Moved = ifelse(Moved == 2, 0, Moved),
+           `Electricity Access` = ifelse(`Electricity Access` == 2, 0, `Electricity Access`),
+           `Water Access` = ifelse(`Water Access` == 2, 0, `Water Access`),
+           Tertiary = ifelse(Tertiary == 2, 0, Tertiary),
+           Gender = ifelse(Gender == 2, 0, Gender)) # Male = 1, female = 0
+    
+
+# Making district dummy variable:
+
+p_load(fastDummies)
+
+district <- as.data.frame(data$`District Council`) %>% 
+    group_by(data$`District Council`) %>% 
+    rename("dc" = 'data$`District Council`')
+
+data <- dummy_cols(data, select_columns = 'District Council', remove_selected_columns = TRUE)
+```
+
+Imputing missing values using random forest miss Forest:
+
+```{r}
+### using missForest:
+
+#testing with the subsample:
+head_impute <- head(data, n = 100)
+imputed_head <- missForest(head_impute, 20, ntree = 500, mtry = 8, verbose = TRUE)
+
+imputed_head$ximp %>% view()
+
+# working, imputes missing values and retains data classes.
+
+```
+
