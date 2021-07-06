@@ -373,12 +373,6 @@ $endif$
 
 \vspace{1cm}
 
-\begin{keyword}
-\footnotesize{
-$keywords$ \\ \vspace{0.3cm}
-\textit{JEL classification} $JELCodes$
-}
-\end{keyword}
 \vspace{0.5cm}
 \end{frontmatter}
 

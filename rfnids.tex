@@ -169,8 +169,9 @@
 
 \begin{frontmatter}  %
 
-\title{Random Forest and the Effects of the Lockdown on Household Income -
-Evidence From NIDS-CRAM Wave 1}
+\title{Utilising Random Forest Algorithms to Classify Those Most Likely to Lose
+Their Main Source of Income due to Lockdown- Evidence From NIDS-CRAM
+Wave 1}
 
 % Set to FALSE if wanting to remove title (for submission)
 
@@ -190,12 +191,6 @@ Evidence From NIDS-CRAM Wave 1}
 
 \vspace{1cm}
 
-\begin{keyword}
-\footnotesize{
- \\ \vspace{0.3cm}
-\textit{JEL classification} 
-}
-\end{keyword}
 \vspace{0.5cm}
 \end{frontmatter}
 
@@ -206,7 +201,7 @@ Evidence From NIDS-CRAM Wave 1}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagestyle{fancy}
 \chead{}
-\rhead{June 2021 - Data Science 871}
+\rhead{July 2021 - Data Science 871}
 \lfoot{}
 \rfoot{\footnotesize Page \thepage}
 \lhead{}
@@ -230,13 +225,13 @@ The purpose of this paper is to report on the implementation of a Random
 Forest (RF) algorithm for a classification-type problem, namely, to
 classify which individuals and households were more likely to lose their
 main source of income due to the coronavirus and subsequent lockdown in
-South Africa in March and April 2020.
-
-RF is well-suited for these types of problems
+South Africa in March and April 2020.\footnote{The template for this
+  report is based on that provided by Katzke
+  (\protect\hyperlink{ref-Texevier}{2017}).} RF is well-suited for
+classification-type problems, as
 
 \hypertarget{data}{%
-\section*{Data}\label{data}}
-\addcontentsline{toc}{section}{Data}
+\section{\texorpdfstring{Data \label{Data}}{Data }}\label{data}}
 
 This study utilises the first wave of the National Income Dynamics Study
 - Coronavirus Rapid Mobile Survey 2020 (NIDS-CRAM) dataset, a
@@ -244,10 +239,10 @@ longitudinal telephonic household survey conducted by the Southern
 Africa Labour and Development Research Unit (SALDRU) in April and May
 2020. NIDS-CRAM investigates the various social and economic effects of
 the national lockdown implemented in March 2020, and more broadly, the
-consequences of the global pandemic on the South African context.
+consequences of the global pandemic on the South African population.
 
 In total, the dataset consists of 21 features, which is reported in
-Table \ref{table} below, with 6838 observations for each feature. The
+Table \ref{table} below, with 7073 observations for each feature. The
 main variable of interest is `Income.Change' - a binary variable where a
 value of 1 indicates that the household has lost their main source of
 income, whilst 2 indicates that it has not. The question asked to
@@ -255,49 +250,123 @@ respondents reads as : ``Has your household lost its main source of
 income since the lockdown started on 27th March?''
 
 \hypertarget{missing-values-and-transformations}{%
-\subsection{Missing Values and
+\subsection*{Missing Values and
 Transformations}\label{missing-values-and-transformations}}
+\addcontentsline{toc}{subsection}{Missing Values and Transformations}
 
-Some missing values are imputed using simple median-replacement, where
-the missing value is replaced with the median value computed on the rest
-of the data. This method is preferred for continuous variables over
-other data types.
+In order to avoid losing information, this study imputes missing values
+for the entire dataset of 21 features. Before imputation, however, NAs
+for the `Employment.Type' feature are replaced by 0's to indicate
+`unemployed', as this survey question was only asked to those who were
+employed. Those who refused to respond or did not know their main form
+of work, were indicated as missing and therefore imputed. Similarly,
+system NAs for the `Tertiary' feature - a dummy variable indicating
+whether an individual completed some form of tertiary education - was
+replaced by 0, or `no', as this question was only asked to those who
+were eligible. Although not perfect solutions, these are fair
+assumptions to make in order to include these potentially important
+variables. Additionally, the feature indicating in which Municipal
+Demarcations Board District Council the household is situated was
+transformed into a matrix of binary variables so as to accommodate the
+necessary structure needed for imputation.\footnote{This is due to the
+  fact that only 53 levels are allowed for factored variables using the
+  \emph{missForest} and \emph{randomForest} packages, whereas the
+  District Council variable consists of 54.}
+
+The method of imputation used in this paper draws on a random forest
+algorithm to impute missing values trained on the matrix of observed
+values in the data. This can be done using the package \emph{missForest}
+in R, following a two-step procedure. First, missing values are
+pre-imputed using simple median replacement - where the missing value is
+replaced with the median value computed on the rest of the observed data
+for each continuous feature. For categorical variables, missing values
+are replaced by the most frequently occurring non-missing
+value.\footnote{This process is also called Strawman imputation.}
+Second, a forest is grown using multivariate splitting, where the
+splitting rule is averaged only over non-missing values. Data is then
+imputed by regressing each feature on all other features, thereafter
+predicting missing values using the fitted forest. This process is
+iterated in order to update the initial median-replaced values until the
+stopping criterion - in our case, when the difference between the
+previous iteration and new iteration have become larger once for each
+data type - is met (Tang \& Ishwaran,
+\protect\hyperlink{ref-tang2017random}{2017}).
+
+The usage of this algorithm is necessitated by the nature of the data,
+where features are of three different data types, namely, categorical,
+numeric and continuous. Stekhoven \& Bühlmann
+(\protect\hyperlink{ref-stekhoven2012missforest}{2012}) show that this
+iterative imputation procedure outperforms many other widely-used
+implementation methods such as, for instance, K-Nearest Neighbours (KNN)
+imputation and Multivariate Imputation by Chained Equations (MICE),
+especially within mixed-type data contexts. Furthermore, it inherits all
+the positive attributes attributed to random forests itself, such as
+being robust to noisy data due to inherent feature selection, as well as
+being simple to implement. However, it is computationally intensive and
+crucially also relies on the assumption that missing data are Missing At
+Random (MAR). If not MAR, there is possibility of introduced selection
+bias. This is deemed a permissible admission due to the relatively low
+number of missing values in the dataset as a whole.
 
 \hypertarget{methodology}{%
 \section{\texorpdfstring{Methodology
 \label{Meth}}{Methodology }}\label{methodology}}
 
-\hypertarget{random-forest}{%
-\subsection{random forest}\label{random-forest}}
+\hypertarget{cloud-computing}{%
+\subsection*{Cloud Computing}\label{cloud-computing}}
+\addcontentsline{toc}{subsection}{Cloud Computing}
 
-\hypertarget{sampling}{%
-\subsection{sampling}\label{sampling}}
+\hypertarget{sql}{%
+\subsection*{SQL}\label{sql}}
+\addcontentsline{toc}{subsection}{SQL}
 
-\hypertarget{bias-variance-trade-off}{%
-\subsection{bias variance trade-off}\label{bias-variance-trade-off}}
+\hypertarget{the-random-forest-algorithm}{%
+\subsection*{The Random Forest
+Algorithm}\label{the-random-forest-algorithm}}
+\addcontentsline{toc}{subsection}{The Random Forest Algorithm}
 
-\hypertarget{prediction-and-confusion-matrix-train-vs-test-data}{%
-\subsection{prediction and confusion matrix, train vs test
-data}\label{prediction-and-confusion-matrix-train-vs-test-data}}
-
-\hypertarget{error-rate-and-bootstrap-samples}{%
-\subsection{error rate and bootstrap
-samples}\label{error-rate-and-bootstrap-samples}}
-
-\hypertarget{number-of-nodes}{%
-\subsection{number of nodes}\label{number-of-nodes}}
-
-\hypertarget{hyperparameter-tuning}{%
-\subsection{hyperparameter tuning}\label{hyperparameter-tuning}}
-
-\hypertarget{variable-importance}{%
-\subsection{variable importance}\label{variable-importance}}
-
-\hypertarget{partial-dependence-plot}{%
-\subsection{partial dependence plot}\label{partial-dependence-plot}}
+\hypertarget{gbm}{%
+\subsection*{GBM}\label{gbm}}
+\addcontentsline{toc}{subsection}{GBM}
 
 \hypertarget{results}{%
 \section{Results}\label{results}}
+
+\hypertarget{model-1-random-forest}{%
+\subsection{Model 1: Random Forest}\label{model-1-random-forest}}
+
+\hypertarget{prediction-and-confusion-matrix-train-vs-test-data}{%
+\subsubsection*{prediction and confusion matrix, train vs test
+data}\label{prediction-and-confusion-matrix-train-vs-test-data}}
+\addcontentsline{toc}{subsubsection}{prediction and confusion matrix,
+train vs test data}
+
+\hypertarget{error-rate-and-bootstrap-samples}{%
+\subsubsection*{error rate and bootstrap
+samples}\label{error-rate-and-bootstrap-samples}}
+\addcontentsline{toc}{subsubsection}{error rate and bootstrap samples}
+
+\hypertarget{number-of-nodes}{%
+\subsubsection*{number of nodes}\label{number-of-nodes}}
+\addcontentsline{toc}{subsubsection}{number of nodes}
+
+\hypertarget{hyperparameter-tuning}{%
+\subsubsection*{hyperparameter tuning}\label{hyperparameter-tuning}}
+\addcontentsline{toc}{subsubsection}{hyperparameter tuning}
+
+\hypertarget{variable-importance}{%
+\subsubsection*{variable importance}\label{variable-importance}}
+\addcontentsline{toc}{subsubsection}{variable importance}
+
+\hypertarget{partial-dependence-plot}{%
+\subsubsection*{partial dependence plot}\label{partial-dependence-plot}}
+\addcontentsline{toc}{subsubsection}{partial dependence plot}
+
+\hypertarget{model-2-gbm-random-forest}{%
+\subsection{Model 2: GBM Random
+Forest}\label{model-2-gbm-random-forest}}
+
+gri
 
 \hypertarget{conclusion}{%
 \section{Conclusion}\label{conclusion}}
@@ -309,6 +378,20 @@ samples}\label{error-rate-and-bootstrap-samples}}
 \addcontentsline{toc}{section}{References}
 
 \hypertarget{refs}{}
+\leavevmode\hypertarget{ref-Texevier}{}%
+Katzke, N.F. 2017. \emph{Texevier: Package to create elsevier templates
+for rmarkdown}. ed. Stellenbosch, South Africa: Bureau for Economic
+Research.
+
+\leavevmode\hypertarget{ref-stekhoven2012missforest}{}%
+Stekhoven, D.J. \& Bühlmann, P. 2012. MissForest---non-parametric
+missing value imputation for mixed-type data. \emph{Bioinformatics}.
+28(1):112--118.
+
+\leavevmode\hypertarget{ref-tang2017random}{}%
+Tang, F. \& Ishwaran, H. 2017. Random forest missing data algorithms.
+\emph{Statistical Analysis and Data Mining: The ASA Data Science
+Journal}. 10(6):363--377.
 
 \hypertarget{appendix}{%
 \section*{Appendix}\label{appendix}}

@@ -22,12 +22,12 @@ theme_set(hrbrthemes::theme_ipsum())
 
 ```{r}
 #select and write derived data
-der <- read_dta("data/derived_NIDS-CRAM_Wave1_Anon_V2.0.0.dta") 
-
-der <- der %>% 
-    select(pid, w1_nc_best_age_yrs, w1_nc_age_intervals, w1_nc_best_race, w1_nc_empl_stat, w1_nc_geo2011, w1_nc_best_gen, w1_nc_mdbdc2011)
-
-write.csv(der, "data/derivedwav1.csv")
+#der <- read_dta("data/derived_NIDS-CRAM_Wave1_Anon_V2.0.0.dta") 
+#
+#der <- der %>% 
+#    select(pid, w1_nc_best_age_yrs, w1_nc_age_intervals, w1_nc_best_race, #w1_nc_empl_stat, w1_nc_geo2011, w1_nc_best_gen, w1_nc_mdbdc2011)
+#
+#write.csv(der, "data/derivedwav1.csv")
 
 #read data
 data <- read_csv("data/nidswav1.csv") %>% 
@@ -199,14 +199,6 @@ full <- full %>%
              "District Council" = w1_nc_mdbdc2011)
 
 write.csv(full, "data/full.csv")
-
-#getting median for hhincome - chose median as the people who did not reply on the survey - would be more likely to earn lower than mean income:
-
-full %>% 
-    filter(w1_nc_hhinc > 0) %>% 
-    summary(w1_nc_hhinc)
-
-
 
 ```
 

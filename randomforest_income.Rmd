@@ -4,8 +4,134 @@ author: "J Coetsee - 19491050"
 date: "04/07/2021"
 output: html_document
 ---
+----------------------------------------------------------------------
+# Chunk options and libraries:
+----------------------------------------------------------------------
 
-#test for imputation:
+```{r setup, include=FALSE}
+#chunk options
+knitr::opts_chunk$set(echo = TRUE)
+
+#source functions from code folder:
+list.files('code/', full.names = T, recursive = T) %>% as.list() %>% walk(~source(.))
+
+library(pacman)
+p_load("scales","cowplot", "randomForest", "haven", "dbplyr","RSQLite", "tidyverse")
+theme_set(hrbrthemes::theme_ipsum())
+
+```
+
+----------------------------------------------------------------------
+# Read in data to be converted into local sql database:
+----------------------------------------------------------------------
+
+```{r}
+
+#read data
+data <- read_csv("data/nidswav1.csv") %>% 
+    select(-1) 
+
+deriveddata <- read_csv("data/derivedwav1.csv") %>% 
+    select(-1) %>% 
+    rename(derpid = pid)
+
+```
+
+----------------------------------------------------------------------
+# Create SQLite database:
+----------------------------------------------------------------------
+
+```{r}
+
+#SQL db with two tables, one with the main dataset, and one where some variables have been derived by the NIDS-CRAM team:
+
+mydb <- DBI::dbConnect(SQLite(), dbname = "")
+dbWriteTable(mydb, "nids", data)
+dbWriteTable(mydb, "derived", deriveddata)
+dbListTables(mydb)
+```
+
+------------------------------------------------------
+# Selecting the Relevant Variables that have enough observations:
+------------------------------------------------------
+
+variable I want to classify/predict: $w1_nc_hhincchng$ = da10_9 - "Has household lost main source of income since lockdown start 27th Mar" 
+
+------------------------------------------------------
+### Other Features from NIDS table: (16 in total, excluding w1_nc_hhincchng and pid)
+------------------------------------------------------
+
+pid = Person identifier
+
+w1_nc_hhinc = da9 - Total household income after tax in April # 2227 reported doesn't know.
+
+w1_nc_hhincdec1 = da8_1 - Sources of household income decreased during lockdown? 
+
+w1_nc_hhincsrc1 = da7_1 - Sources household income in February? 
+
+w1_nc_incgov = da5 - Do you receive any kind of government grant?
+
+w1_nc_unemdc = 	cg2 - When was the last time you worked?
+
+w1_nc_emwrk_isco_c = cd1 - Occupational code for usual work
+
+w1_nc_emtyp = cb6 - Respondent's main form of work
+
+w1_nc_enrgelec = b17 - Dwelling/house has access to electricity?
+
+w1_nc_watsrc =  b15 - Piped or tap water inside dwelling/house/in yard?
+
+w1_nc_nocld = b14 - More/less/same number kids in house now compared to before the lockdown?
+
+w1_nc_nopres = b10 - Number of people resident, including yourself (don't forget babies)
+
+w1_nc_dwltyp = b9 - Type of dwelling or house living in
+
+w1_nc_moveres_apr = b7 - Moved to another house/dwelling within the province for April lockdown?
+
+w1_nc_prov = b6_1 - Province currently living in now?
+
+w1_nc_edter = b4 - Respondent successfully completed some form of tertiary studies?
+
+w1_nc_edschgrd = b3 - Highest school grade completed
+------------------------------------------------------
+### Features from derived table:
+------------------------------------------------------
+
+derpid = pid
+
+w1_nc_best_age_yrs = age in years
+
+w1_nc_age_intervals = age intervals (5 years)
+
+w1_nc_best_race = race/population group
+
+w1_nc_empl_stat = employment status
+
+w1_nc_geo2011 = geotype (based on 2011 census, traditional-urban-farms)
+
+w1_nc_best_gen = gender
+
+w1_nc_mdbdc2011 = municipality (2011 census)
+
+------------------------------------------------------
+# Making the complete SQL database with selected variables: This dataset is called full
+------------------------------------------------------
+
+```{r}
+
+full <- tbl(mydb, sql("SELECT pid, w1_nc_hhincchng, w1_nc_hhinc, w1_nc_hhincdec1, w1_nc_incgov, w1_nc_hhincsrc1, w1_nc_unemdc, w1_nc_emwrk_isco_c, w1_nc_emtyp,w1_nc_enrgelec, w1_nc_watsrc, w1_nc_nocld, w1_nc_nopres, w1_nc_dwltyp, w1_nc_moveres_apr, w1_nc_prov, w1_nc_edter, w1_nc_edschgrd,w1_nc_best_age_yrs, w1_nc_age_intervals,w1_nc_best_race, w1_nc_empl_stat,w1_nc_geo2011, w1_nc_best_gen, w1_nc_mdbdc2011  FROM nids, derived WHERE pid = derpid")) %>% 
+    collect()
+
+# save dataset as csv:
+
+write.csv(full, "data/full.csv")
+
+```
+
+----------------------------------------------------------------------
+# Loading Data and Wrangling:
+----------------------------------------------------------------------
 
 ```{r}
 data <- read.csv("data/full.csv", header = TRUE)
@@ -14,6 +140,8 @@ data <- data %>%
     select(-c(w1_nc_unemdc, w1_nc_emwrk_isco_c)) %>% #drop vars with too many NAs, captured by two other vars
     mutate(w1_nc_emtyp = replace_na(w1_nc_emtyp, 0),  # replace nas with 0's, for unemployed 
            w1_nc_edter = replace_na(w1_nc_edter, 2))
+
+### Assign missing values (Refused (-8), Not Applicable (-5), Don't Know (-9), Missing (-3)) as NAs. This is in order to impute missing values later.
 
 data <- data %>% 
     mutate(w1_nc_hhincchng = ifelse(w1_nc_hhincchng < 0, NA, w1_nc_hhincchng), # hhincome change, change to NA, there are very few values. need no ,missing for this var
@@ -32,10 +160,13 @@ data <- data %>%
            w1_nc_prov = ifelse(w1_nc_prov == 10, NA, w1_nc_prov),
            w1_nc_edter = ifelse(w1_nc_edter < 0, NA, w1_nc_edter),
            w1_nc_geo2011 = ifelse(w1_nc_geo2011 < 0, NA, w1_nc_geo2011),
-           w1_nc_empl_stat = ifelse(w1_nc_empl_stat < 0,NA, w1_nc_empl_stat))
+           w1_nc_empl_stat = ifelse(w1_nc_empl_stat < 0,NA, w1_nc_empl_stat),
+           w1_nc_mdbdc2011 = ifelse(w1_nc_mdbdc2011 < 0, NA, w1_nc_mdbdc2011))
 
+#check amount of NAs in each col
 colSums(is.na(data))
 
+#Renaming variables:
 data <- data %>% 
     rename(  "Income Change" = w1_nc_hhincchng,
              "PID" = pid,
@@ -61,46 +192,41 @@ data <- data %>%
              "Gender" = w1_nc_best_gen,
              "District Council" = w1_nc_mdbdc2011)
 
-# dropping cols and mutating data classes to factor for classification
+# dropping cols and mutating data classes to factor for classification:
 
 factor_cols <- c("Income Change", "District Council", "Sources Income Decreased", "Employed", "Employment Type", "Sources HH Income", "Children Change", "Dwelling Type", "Province","Race","Geo Type")
 
 data <- data %>% 
     mutate_at(factor_cols, funs(as.factor(.)))
 
-data <- data$ %>% 
+data <- data %>% 
     select(-X, -PID)
 
-#making dummy variables:
-
-moved, grant, elec, water, tertiary, gender
+# making dummy variables: moved, grant, elec, water, tertiary, gender
 
 data <- data %>% 
-    mutate(Grant = ifelse(Grant == 2, 0, Grant),
-           Moved = ifelse(Moved == 2, 0, Moved),
-           `Electricity Access` = ifelse(`Electricity Access` == 2, 0, `Electricity Access`),
-           `Water Access` = ifelse(`Water Access` == 2, 0, `Water Access`),
-           Tertiary = ifelse(Tertiary == 2, 0, Tertiary),
+    mutate(Grant = ifelse(Grant == 2, 0, Grant), #yes = 1, no = 0
+           Moved = ifelse(Moved == 2, 0, Moved),#yes = 1, no = 0
+           `Electricity Access` = ifelse(`Electricity Access` == 2, 0, `Electricity Access`),#yes = 1, no = 0
+           `Water Access` = ifelse(`Water Access` == 2, 0, `Water Access`),#yes = 1, no = 0
+           Tertiary = ifelse(Tertiary == 2, 0, Tertiary),#yes = 1, no = 0
            Gender = ifelse(Gender == 2, 0, Gender)) # Male = 1, female = 0
     
 
-# Making district dummy variable:
+# Splitting district council variable (with 54 levels), into separate dummies, as the randomForest algorithm only allows for 53 levels in a categorical variable.
 
 p_load(fastDummies)
-
-district <- as.data.frame(data$`District Council`) %>% 
-    group_by(data$`District Council`) %>% 
-    rename("dc" = 'data$`District Council`')
-
 data <- dummy_cols(data, select_columns = 'District Council', remove_selected_columns = TRUE)
 ```
 
-Imputing missing values using random forest miss Forest:
+----------------------------------------------------------------------
+# Imputing missing values using random forest  - missForest package:
+----------------------------------------------------------------------
 
 ```{r}
-### using missForest:
 
-#testing with the subsample:
+## testing with a subsample:
+
 head_impute <- head(data, n = 100)
 imputed_head <- missForest(head_impute, 20, ntree = 500, mtry = 8, verbose = TRUE)
 
@@ -108,5 +234,223 @@ imputed_head$ximp %>% view()
 
 # working, imputes missing values and retains data classes.
 
+## entire sample:
+
+imputed <-  missForest(data, 10, ntree = 500, verbose = TRUE)
+imputed_full <- imputed$ximp 
+
+#write imputed data to csv
+write.csv(imputed_full, "data/imputed_full.csv")
+
+
 ```
+
+######################################################################
+----------------------------------------------------------------------
+### Random Forest on Imputed data - Classification:
+----------------------------------------------------------------------
+######################################################################
+
+# Focus:
+
+Want to compute a RF to look at the effect of Lockdown on whether households have lost their main source of income. i.e. who are most likely to have lost their main income due to lockdown. 
+
+----------------------------------------------------------------------
+### Packages and Data
+----------------------------------------------------------------------
+
+```{r}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tictoc, parallel, pbapply, future, future.apply,
+    furrr, RhpcBLASctl, memoise, here, caret, ranger, missForest, tidyverse)
+plan(multisession)
+
+```
+
+
+```{r}
+
+#read data in if needed:
+#rf1_data <- read.csv("data/imputed_full.csv", header = TRUE)
+#str(rf1_data)
+
+#change col names:
+
+names(imputed_full) <- gsub(x = names(imputed_full), pattern = " ", replacement = ".")
+
+# Data Partition
+set.seed(123)
+ind <- sample(2, nrow(imputed_full), replace = TRUE, prob = c(0.7, 0.3))
+train <- imputed_full[ind==1,]
+test <- imputed_full[ind==2,]
+
+# Number of features:
+n_features <- length(setdiff(names(imputed_full), "Income Change"))
+
+
+# Random Forest with randomForest package
+library(randomForest)
+set.seed(123)
+rf1 <- randomForest(Income.Change ~ ., 
+                   data = train,
+                   ntree = 500,
+                   mtry = 4,
+                   importance = TRUE,
+                   proximity = TRUE)
+
+print(rf1)
+attributes(rf1)
+
+# Prediction & Confusion Matrix - train data
+library(caret)
+
+p1 <- predict(rf1, train)
+confusionMatrix(p1, train$Income.Change)
+
+
+# Prediction & Confusion Matrix - test data
+p2 <- predict(rf1, test)
+confusionMatrix(p2, test$Income.Change)
+
+# Error rate of Random Forest
+plot(rf1)
+
+# Tune mtry
+t <- tuneRF(train[,-1], train[,1],
+       stepFactor = 0.5,
+       plot = TRUE,
+       ntreeTry = 1000,
+       trace = TRUE,
+       improve = 0.05)
+
+# No. of nodes for the trees
+hist(treesize(rf1),
+     main = "No. of Nodes for the Trees",
+     col = "green")
+
+# Variable Importance
+varImpPlot(rf1,
+           sort = T,
+           n.var = 10,
+           main = "Top 10 - Variable Importance")
+imprf1 <- randomForest::importance(rf1)
+varUsed(rf1)
+
+# Partial Dependence Plot
+partialPlot(rf1, train, x.var = Income.Change, which.class = "2", plot = TRUE)
+
+impvar <- rownames(imprf1)[order(imprf1[, 1], decreasing=TRUE)]
+op <- par(mfrow=c(2, 3))
+
+for (i in seq_along(impvar)) {
+    partialPlot(rf1,  imputed_full, impvar[i], xlab=impvar[i],
+                main=paste("Partial Dependence on", impvar[i]),
+                ylim=c(30, 70))
+}
+par(op)
+
+
+# Extract Single Tree
+getTree(rf1, 1, labelVar = TRUE)
+
+# Multi-dimensional Scaling Plot of Proximity Matrix
+MDSplot(rf1, train$Income.Change)
+
+```
+----------------------------------------------------------------------
+# Running RF again after tuning mtry = 8
+----------------------------------------------------------------------
+```{r}
+
+rf3 <- randomForest(Income.Change ~ ., 
+                   data = train,
+                   ntree = 700,
+                   mtry = 8,
+                   importance = TRUE,
+                   proximity = TRUE)
+
+print(rf3)
+attributes(rf3)
+
+# Prediction & Confusion Matrix - train data
+
+p3 <- predict(rf3, train)
+confusionMatrix(p3, train$Income.Change)
+
+# Prediction & Confusion Matrix - test data
+p4 <- predict(rf3, test)
+confusionMatrix(p4, test$Income.Change)
+
+# Error rate of Random Forest
+plot(rf3)
+
+```
+
+
+----------------------------------------------------------------------
+# GBM Model
+----------------------------------------------------------------------
+
+# Setting Up Grid:
+
+```{r}
+p_load("gbm")
+
+grid <-expand.grid(n.trees = seq(200,1000,by=200), interaction.depth = seq(1,3,by=2), shrinkage = seq(.01,.09,by=.04), n.minobsinnode = seq (1,50, by = 10)) # grid features
+
+control <- trainControl(method="CV", number = 10) # control - 10-fold cross-validation
+```
+----------------------------------------------------------------------
+# Grid Search for Simple gradient boosted model:
+----------------------------------------------------------------------
+finding optimal n.trees = 800, 
+interaction.depth = 3, 
+shrinkage = 0.01, 
+n.minobssinnode = 1.
+
+```{r}
+set.seed(123)
+
+gbm_train <- train(Income.Change~.,data=train, method='gbm', trControl=control, tuneGrid=grid)
+
+gbm_train
+
+# this gives optimal values for : n.trees = 800, interaction.depth = 3, shrinkage = 0.01, n.minobssinnode = 1.
+```
+
+----------------------------------------------------------------------
+# Training GBM:
+----------------------------------------------------------------------
+
+```{r}
+#making outcome variable a dummy needed for gbm function
+
+train$Income.Change = ifelse(train$Income.Change == "2", 0 , 1)
+
+set.seed(123)
+gbm1 <- gbm(Income.Change~., distribution = 'bernoulli', data=train, n.trees = 800, interaction.depth = 3, shrinkage=.01, n.minobsinnode = 1)
+
+summary(gbm1)
+
+```
+
+----------------------------------------------------------------------
+# Testing GBM:
+----------------------------------------------------------------------
+```{r}
+gbm1test <- predict(gbm1, newdata = test,type = 'response', n.trees = 800)
+
+gbmclass<-ifelse(gbm1test < 0.5 ,2 , 1)
+
+table(gbmclass,test$Income.Change)
+
+gbm1accuracy <-((467+1018)/(467+1018 +424 + 191)) # does not improve on accuracy really, 0.7071429. It's actually lower than model rf3 (0.7124)
+
+
+```
+
+
+
+
+
 
