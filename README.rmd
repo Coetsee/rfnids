@@ -15,10 +15,10 @@ In this project, I attempt to implement a Random Forest on the NidsCram wave 1 d
 
 # Files:
 
-*rfnids.rmd is the write up file which creates the pdf report output. 
+* rfnids.rmd is the write up file which creates the pdf report output. 
+ 
+* wrangling.rmd is where a local sql database is created and data is cleaned. 
 
-*wrangling.rmd is where a local sql database is created and data is cleaned. 
+* Model1.rmd computes the first rf model given the data above. 
 
-*
-
-*
+* 

@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 list.files('code/', full.names = T, recursive = T) %>% as.list() %>% walk(~source(.))
 
 library(pacman)
-p_load("scales","cowplot", "randomForest", "haven", "dbplyr","RSQLite", "tidyverse")
+p_load("scales","cowplot", "randomForest", "gridExtra", "haven", "dbplyr","RSQLite", "readr", "missForest", "tidyverse")
 theme_set(hrbrthemes::theme_ipsum())
 
 ```
@@ -53,6 +53,8 @@ dbListTables(mydb)
 
 ------------------------------------------------------
 # Selecting the Relevant Variables that have enough observations:
+
+The identification of relevant features was done through Bash Unix Shell queries of the two tables within the SQL database.
 ------------------------------------------------------
 
 variable I want to classify/predict: $w1_nc_hhincchng$ = da10_9 - "Has household lost main source of income since lockdown start 27th Mar" 
@@ -94,6 +96,7 @@ w1_nc_prov = b6_1 - Province currently living in now?
 w1_nc_edter = b4 - Respondent successfully completed some form of tertiary studies?
 
 w1_nc_edschgrd = b3 - Highest school grade completed
+
 ------------------------------------------------------
 ### Features from derived table:
 ------------------------------------------------------
@@ -157,14 +160,15 @@ data <- data %>%
            w1_nc_dwltyp = ifelse(w1_nc_dwltyp < 0, NA, w1_nc_dwltyp), #missing
            w1_nc_moveres_apr = ifelse(w1_nc_moveres_apr < 0, NA, w1_nc_moveres_apr),
            w1_nc_prov = ifelse(w1_nc_prov < 0,NA, w1_nc_prov),
-           w1_nc_prov = ifelse(w1_nc_prov == 10, NA, w1_nc_prov),
+           w1_nc_prov = ifelse(w1_nc_prov == 10, NA, w1_nc_prov), # 10 = outside of south africa, 3 cases
            w1_nc_edter = ifelse(w1_nc_edter < 0, NA, w1_nc_edter),
+           w1_nc_edschgrd = ifelse(w1_nc_edschgrd < 0, NA, w1_nc_edschgrd),
            w1_nc_geo2011 = ifelse(w1_nc_geo2011 < 0, NA, w1_nc_geo2011),
            w1_nc_empl_stat = ifelse(w1_nc_empl_stat < 0,NA, w1_nc_empl_stat),
            w1_nc_mdbdc2011 = ifelse(w1_nc_mdbdc2011 < 0, NA, w1_nc_mdbdc2011))
 
 #check amount of NAs in each col
-colSums(is.na(data))
+#colSums(is.na(data))
 
 #Renaming variables:
 data <- data %>% 
@@ -192,16 +196,6 @@ data <- data %>%
              "Gender" = w1_nc_best_gen,
              "District Council" = w1_nc_mdbdc2011)
 
-# dropping cols and mutating data classes to factor for classification:
-
-factor_cols <- c("Income Change", "District Council", "Sources Income Decreased", "Employed", "Employment Type", "Sources HH Income", "Children Change", "Dwelling Type", "Province","Race","Geo Type")
-
-data <- data %>% 
-    mutate_at(factor_cols, funs(as.factor(.)))
-
-data <- data %>% 
-    select(-X, -PID)
-
 # making dummy variables: moved, grant, elec, water, tertiary, gender
 
 data <- data %>% 
@@ -211,13 +205,31 @@ data <- data %>%
            `Water Access` = ifelse(`Water Access` == 2, 0, `Water Access`),#yes = 1, no = 0
            Tertiary = ifelse(Tertiary == 2, 0, Tertiary),#yes = 1, no = 0
            Gender = ifelse(Gender == 2, 0, Gender)) # Male = 1, female = 0
-    
+
+# dropping cols and mutating data classes to factor for classification:
+
+factor_cols <- c("Income Change", "District Council", "Sources Income Decreased", "Employed", "Employment Type", "Sources HH Income", "Children Change", "Dwelling Type", "Province","Race","Geo Type", "Water Access", "Grant", "Electricity Access", "Water Access", "Tertiary", "Gender")
+
+data <- data %>% 
+    mutate_at(factor_cols, funs(as.factor(.)))
+
+data <- data %>% 
+    select(-X, -PID)
+
 
 # Splitting district council variable (with 54 levels), into separate dummies, as the randomForest algorithm only allows for 53 levels in a categorical variable.
 
 p_load(fastDummies)
 data <- dummy_cols(data, select_columns = 'District Council', remove_selected_columns = TRUE)
 ```
+
+----------------------------------------------------------------------
+# Descriptive Statistics - data:
+----------------------------------------------------------------------
+
+
+
+
 
 ----------------------------------------------------------------------
 # Imputing missing values using random forest  - missForest package:
@@ -232,12 +244,31 @@ imputed_head <- missForest(head_impute, 20, ntree = 500, mtry = 8, verbose = TRU
 
 imputed_head$ximp %>% view()
 
+
+#testing with parallel
+p_load("doParallel", "doRNG")
+
+head_impute <- head(data, n = 100)
+
+doParallel::registerDoParallel(cores = 4) # set based on number of CPU cores
+doRNG::registerDoRNG(seed = 123)
+
+tic()
+imputed_head <- missForest(head_impute, 20, ntree = 500, mtry = 8, verbose = TRUE, parallelize = "variables")
+toc()
+
+imputed_head$ximp %>% view()
+
+
 # working, imputes missing values and retains data classes.
 
 ## entire sample:
 
-imputed <-  missForest(data, 10, ntree = 500, verbose = TRUE)
-imputed_full <- imputed$ximp 
+tic()
+imputed <-  missForest(data, 3, ntree = 50, mtry = 8, verbose = TRUE, parallelize = "forests")
+toc()
+
+imputed_full <- imputed$ximp
 
 #write imputed data to csv
 write.csv(imputed_full, "data/imputed_full.csv")
@@ -291,12 +322,17 @@ n_features <- length(setdiff(names(imputed_full), "Income Change"))
 # Random Forest with randomForest package
 library(randomForest)
 set.seed(123)
+
+#running first rf model, not tuned yet
+
+tic()
 rf1 <- randomForest(Income.Change ~ ., 
                    data = train,
                    ntree = 500,
                    mtry = 4,
                    importance = TRUE,
                    proximity = TRUE)
+toc()
 
 print(rf1)
 attributes(rf1)
@@ -315,14 +351,6 @@ confusionMatrix(p2, test$Income.Change)
 # Error rate of Random Forest
 plot(rf1)
 
-# Tune mtry
-t <- tuneRF(train[,-1], train[,1],
-       stepFactor = 0.5,
-       plot = TRUE,
-       ntreeTry = 1000,
-       trace = TRUE,
-       improve = 0.05)
-
 # No. of nodes for the trees
 hist(treesize(rf1),
      main = "No. of Nodes for the Trees",
@@ -333,39 +361,54 @@ varImpPlot(rf1,
            sort = T,
            n.var = 10,
            main = "Top 10 - Variable Importance")
+
 imprf1 <- randomForest::importance(rf1)
 varUsed(rf1)
 
 # Partial Dependence Plot
 partialPlot(rf1, train, x.var = Income.Change, which.class = "2", plot = TRUE)
 
-impvar <- rownames(imprf1)[order(imprf1[, 1], decreasing=TRUE)]
-op <- par(mfrow=c(2, 3))
-
-for (i in seq_along(impvar)) {
-    partialPlot(rf1,  imputed_full, impvar[i], xlab=impvar[i],
-                main=paste("Partial Dependence on", impvar[i]),
-                ylim=c(30, 70))
-}
-par(op)
-
-
 # Extract Single Tree
 getTree(rf1, 1, labelVar = TRUE)
 
 # Multi-dimensional Scaling Plot of Proximity Matrix
+
 MDSplot(rf1, train$Income.Change)
+
+
+# ROC and AUC curves:
+p_load("pROC")
+
+rf1_roc <- roc(train$Income.Change, rf1$votes[,2])
+
+plot(rf1_roc)
+auc(rf1_roc)
+
+
+# Tune mtry
+
+p_load(parallelMap, parallel)
+parallelStartSocket (cpus = detectCores())
+
+tic()
+t <- tuneRF(train[,-1], train[,1],
+       stepFactor = 0.5,
+       plot = TRUE,
+       ntreeTry = 1000,
+       trace = TRUE,
+       improve = 0.05)
+toc()
 
 ```
 ----------------------------------------------------------------------
-# Running RF again after tuning mtry = 8
+# Running RF again after tuning: Model is called rf3
 ----------------------------------------------------------------------
 ```{r}
 
 rf3 <- randomForest(Income.Change ~ ., 
                    data = train,
                    ntree = 700,
-                   mtry = 8,
+                   mtry = 16,
                    importance = TRUE,
                    proximity = TRUE)
 
@@ -384,6 +427,35 @@ confusionMatrix(p4, test$Income.Change)
 # Error rate of Random Forest
 plot(rf3)
 
+rf3_impplot <- varImpPlot(rf1,
+           sort = T,
+           n.var = 10,
+           main = "Tuned RF - Variable Importance")
+
+
+imprf3 <- randomForest::importance(rf3)
+varUsed(rf3)
+
+# Partial Dependence Plot
+partialPlot(rf3, train, x.var = Income.Change, which.class = "2", plot = TRUE)
+
+# Extract Single Tree
+getTree(rf3, 1, labelVar = TRUE)
+
+# Multi-dimensional Scaling Plot of Proximity Matrix
+
+MDSrf3train <- MDSplot(rf3, train$Income.Change)
+
+MDSrf3test <- MDSplot(rf3, test$Income.Change)
+
+
+# ROC and AUC curves:
+
+rf3_roc <- roc(test$Income.Change, rf3$votes[,2])
+
+plot(rf3_roc)
+auc(rf3_roc)
+
 ```
 
 
@@ -396,7 +468,7 @@ plot(rf3)
 ```{r}
 p_load("gbm")
 
-grid <-expand.grid(n.trees = seq(200,1000,by=200), interaction.depth = seq(1,3,by=2), shrinkage = seq(.01,.09,by=.04), n.minobsinnode = seq (1,50, by = 10)) # grid features
+grid <- expand.grid(n.trees = seq(200,1000,by=200), interaction.depth = seq(1,3,by=2), shrinkage = seq(.01,.09,by=.04), n.minobsinnode = seq (1,50, by = 10)) # grid features
 
 control <- trainControl(method="CV", number = 10) # control - 10-fold cross-validation
 ```
