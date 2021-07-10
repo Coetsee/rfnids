@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/W32TeX) (preloaded format=pdflatex 2021.3.29)  8 JUL 2021 12:25
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/W32TeX) (preloaded format=pdflatex 2021.3.29)  10 JUL 2021 15:03
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -657,7 +657,11 @@ Package caption Info: longtable package is loaded.
 Package: ltcaption 2020/05/30 v1.4b longtable captions (AR)
 ))
 \cslhangindent=\skip84
-(./rfnids.aux)
+(./rfnids.aux
+
+LaTeX Warning: Label `comparison' multiply defined.
+
+)
 \openout1 = `rfnids.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 166.
@@ -819,16 +823,15 @@ LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
 95.
 (c:/Users/Outlet/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)
-Overfull \hbox (28.9299pt too wide) in paragraph at lines 260--288
- [] 
- []
-
-[1
+) [1
 
 
 {c:/Users/Outlet/AppData/Roaming/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdft
 ex.map}]
+Overfull \hbox (28.9299pt too wide) in paragraph at lines 273--301
+ [] 
+ []
+
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -856,21 +859,95 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 [4]
-<Figures/rf3_impplot.png, id=160, 730.22812pt x 358.33875pt>
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[5]
+<Figures/rf3_impplot.png, id=146, 718.18312pt x 282.30469pt>
 File: Figures/rf3_impplot.png Graphic file (type png)
 <use Figures/rf3_impplot.png>
-Package pdftex.def Info: Figures/rf3_impplot.png  used on input line 451.
-(pdftex.def)             Requested size: 483.41216pt x 237.22058pt.
-<Figures/MDS_rf3_train.png, id=161, 601.4972pt x 329.73187pt>
+Package pdftex.def Info: Figures/rf3_impplot.png  used on input line 507.
+(pdftex.def)             Requested size: 483.41216pt x 190.02621pt.
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[6 <./Figures/rf3_impplot.png>]
+<Figures/gbm_impplot.png, id=159, 537.50812pt x 272.51813pt>
+File: Figures/gbm_impplot.png Graphic file (type png)
+<use Figures/gbm_impplot.png>
+Package pdftex.def Info: Figures/gbm_impplot.png  used on input line 522.
+(pdftex.def)             Requested size: 483.41216pt x 245.09355pt.
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[7 <./Figures/gbm_impplot.png>]
+<Figures/comparison_plot.png, id=173, 613.54219pt x 334.24875pt>
+File: Figures/comparison_plot.png Graphic file (type png)
+<use Figures/comparison_plot.png>
+Package pdftex.def Info: Figures/comparison_plot.png  used on input line 553.
+(pdftex.def)             Requested size: 483.41216pt x 263.35487pt.
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[8 <./Figures/comparison_plot.png>]
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[9]
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[10]
+<Figures/rf1tuned.png, id=191, 659.46375pt x 280.04625pt>
+File: Figures/rf1tuned.png Graphic file (type png)
+<use Figures/rf1tuned.png>
+Package pdftex.def Info: Figures/rf1tuned.png  used on input line 631.
+(pdftex.def)             Requested size: 386.73564pt x 191.09125pt.
+<Figures/rf3_error_1.png, id=192, 560.8453pt x 301.8778pt>
+File: Figures/rf3_error_1.png Graphic file (type png)
+<use Figures/rf3_error_1.png>
+Package pdftex.def Info: Figures/rf3_error_1.png  used on input line 640.
+(pdftex.def)             Requested size: 386.72694pt x 191.08224pt.
+<Figures/MDS_rf3_train.png, id=193, 601.4972pt x 329.73187pt>
 File: Figures/MDS_rf3_train.png Graphic file (type png)
 <use Figures/MDS_rf3_train.png>
-Package pdftex.def Info: Figures/MDS_rf3_train.png  used on input line 459.
-(pdftex.def)             Requested size: 483.42868pt x 191.08864pt.
-<Figures/MDS_rf3_test.png, id=162, 601.4972pt x 329.73187pt>
+Package pdftex.def Info: Figures/MDS_rf3_train.png  used on input line 649.
+(pdftex.def)             Requested size: 483.42868pt x 222.93674pt.
+<Figures/MDS_rf3_test.png, id=194, 601.4972pt x 329.73187pt>
 File: Figures/MDS_rf3_test.png Graphic file (type png)
 <use Figures/MDS_rf3_test.png>
-Package pdftex.def Info: Figures/MDS_rf3_test.png  used on input line 459.
-(pdftex.def)             Requested size: 483.42868pt x 191.08864pt.
+Package pdftex.def Info: Figures/MDS_rf3_test.png  used on input line 649.
+(pdftex.def)             Requested size: 483.42868pt x 222.93674pt.
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -879,7 +956,17 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[5 <./Figures/rf3_impplot.png>]
+[11 <./Figures/rf1tuned.png> <./Figures/rf3_error_1.png (PNG copy)>]
+<Figures/rf3_roc.png, id=204, 462.97969pt x 313.9228pt>
+File: Figures/rf3_roc.png Graphic file (type png)
+<use Figures/rf3_roc.png>
+Package pdftex.def Info: Figures/rf3_roc.png  used on input line 663.
+(pdftex.def)             Requested size: 236.87947pt x 191.08067pt.
+<Figures/gbm1_roc.png, id=205, 432.11438pt x 322.20375pt>
+File: Figures/gbm1_roc.png Graphic file (type png)
+<use Figures/gbm1_roc.png>
+Package pdftex.def Info: Figures/gbm1_roc.png  used on input line 663.
+(pdftex.def)             Requested size: 236.8724pt x 191.08676pt.
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -888,7 +975,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[6 <./Figures/MDS_rf3_train.png> <./Figures/MDS_rf3_test.png>]
+[12 <./Figures/MDS_rf3_train.png> <./Figures/MDS_rf3_test.png>]
 No file rfnids.bbl.
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -898,18 +985,21 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[7] (./rfnids.aux)
+[13 <./Figures/rf3_roc.png> <./Figures/gbm1_roc.png>] (./rfnids.aux)
+
+LaTeX Warning: There were multiply-defined labels.
+
 Package rerunfilecheck Info: File `rfnids.out' has not changed.
-(rerunfilecheck)             Checksum: BEAD20190825709A66624FB5331A6135;2911.
+(rerunfilecheck)             Checksum: 0D89DD6A2FA2BF8471EB1181DE1E036D;1774.
  ) 
 Here is how much of TeX's memory you used:
- 14985 strings out of 480962
- 259415 string characters out of 5905732
- 554857 words of memory out of 5000000
- 31865 multiletter control sequences out of 15000+600000
+ 15036 strings out of 480962
+ 260355 string characters out of 5905732
+ 557405 words of memory out of 5000000
+ 31907 multiletter control sequences out of 15000+600000
  470241 words of font info for 74 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 83i,12n,88p,381b,774s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 83i,12n,88p,274b,778s stack positions out of 5000i,500n,10000p,200000b,80000s
 {c:/Users/Outlet/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.
 enc}<c:/Users/Outlet/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/l
 mbx10.pfb><c:/Users/Outlet/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/publi
@@ -922,10 +1012,10 @@ dist/fonts/type1/public/lm/lmri10.pfb><c:/Users/Outlet/AppData/Roaming/TinyTeX/
 texmf-dist/fonts/type1/public/lm/lmri7.pfb><c:/Users/Outlet/AppData/Roaming/Tin
 yTeX/texmf-dist/fonts/type1/public/lm/lmri9.pfb><c:/Users/Outlet/AppData/Roamin
 g/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt9.pfb>
-Output written on rfnids.pdf (7 pages, 267307 bytes).
+Output written on rfnids.pdf (13 pages, 333123 bytes).
 PDF statistics:
- 245 PDF objects out of 1000 (max. 8388607)
- 217 compressed objects within 3 object streams
- 68 named destinations out of 1000 (max. 500000)
- 192 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 274 PDF objects out of 1000 (max. 8388607)
+ 229 compressed objects within 3 object streams
+ 71 named destinations out of 1000 (max. 500000)
+ 174 words of extra memory for PDF output out of 10000 (max. 10000000)
 

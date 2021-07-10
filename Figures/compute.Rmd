@@ -1,143 +1,28 @@
 ---
-title: "Untitled"
-author: "J Coetsee - 19491050"
-date: "04/07/2021"
+title: "compute"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
-----------------------------------------------------------------------
-# Chunk options and libraries:
-----------------------------------------------------------------------
 
 ```{r setup, include=FALSE}
 #chunk options
 knitr::opts_chunk$set(echo = TRUE)
 
+install.packages("pacman")
 library(pacman)
-p_load("scales","cowplot", "randomForest", "gridExtra", "haven", "dbplyr","RSQLite", "readr", "missForest", "tidyverse")
-theme_set(theme_light())
+p_load("scales","cowplot", "randomForest", "gridExtra", "haven", "dbplyr","RSQLite", "readr", "missForest", "tictoc","tidyverse")
 
-#source functions from code folder:
-list.files('code/', full.names = T, recursive = T) %>% as.list() %>% walk(~source(.))
 
 ```
 
-----------------------------------------------------------------------
-# Read in data to be converted into local sql database:
-----------------------------------------------------------------------
-
-```{r}
-
-#read data
-data <- read_csv("data/nidswav1.csv") %>% 
-    select(-1) 
-
-deriveddata <- read_csv("data/derivedwav1.csv") %>% 
-    select(-1) %>% 
-    rename(derpid = pid)
-
-```
-
-----------------------------------------------------------------------
-# Create SQLite database:
-----------------------------------------------------------------------
-
-```{r}
-
-#SQL db with two tables, one with the main dataset, and one where some variables have been derived by the NIDS-CRAM team:
-
-mydb <- DBI::dbConnect(SQLite(), dbname = "")
-dbWriteTable(mydb, "nids", data)
-dbWriteTable(mydb, "derived", deriveddata)
-dbListTables(mydb)
-```
-
-------------------------------------------------------
-# Selecting the Relevant Variables that have enough observations:
-
-The identification of relevant features was done through Bash Unix Shell queries of the two tables within the SQL database.
-------------------------------------------------------
-
-variable I want to classify/predict: $w1_nc_hhincchng$ = da10_9 - "Has household lost main source of income since lockdown start 27th Mar" 
-
-------------------------------------------------------
-### Other Features from NIDS table: (16 in total, excluding w1_nc_hhincchng and pid)
-------------------------------------------------------
-
-pid = Person identifier
-
-w1_nc_hhinc = da9 - Total household income after tax in April # 2227 reported doesn't know.
-
-w1_nc_hhincdec1 = da8_1 - Sources of household income decreased during lockdown? 
-
-w1_nc_hhincsrc1 = da7_1 - Sources household income in February? 
-
-w1_nc_incgov = da5 - Do you receive any kind of government grant?
-
-w1_nc_unemdc = 	cg2 - When was the last time you worked?
-
-w1_nc_emwrk_isco_c = cd1 - Occupational code for usual work
-
-w1_nc_emtyp = cb6 - Respondent's main form of work
-
-w1_nc_enrgelec = b17 - Dwelling/house has access to electricity?
-
-w1_nc_watsrc =  b15 - Piped or tap water inside dwelling/house/in yard?
-
-w1_nc_nocld = b14 - More/less/same number kids in house now compared to before the lockdown?
-
-w1_nc_nopres = b10 - Number of people resident, including yourself (don't forget babies)
-
-w1_nc_dwltyp = b9 - Type of dwelling or house living in
-
-w1_nc_moveres_apr = b7 - Moved to another house/dwelling within the province for April lockdown?
-
-w1_nc_prov = b6_1 - Province currently living in now?
-
-w1_nc_edter = b4 - Respondent successfully completed some form of tertiary studies?
-
-w1_nc_edschgrd = b3 - Highest school grade completed
-
-------------------------------------------------------
-### Features from derived table:
-------------------------------------------------------
-
-derpid = pid
-
-w1_nc_best_age_yrs = age in years
-
-w1_nc_age_intervals = age intervals (5 years)
-
-w1_nc_best_race = race/population group
-
-w1_nc_empl_stat = employment status
-
-w1_nc_geo2011 = geotype (based on 2011 census, traditional-urban-farms)
-
-w1_nc_best_gen = gender
-
-w1_nc_mdbdc2011 = municipality (2011 census)
-
-------------------------------------------------------
-# Making the complete SQL database with selected variables: This dataset is called full
-------------------------------------------------------
-
-```{r}
-
-full <- tbl(mydb, sql("SELECT pid, w1_nc_hhincchng, w1_nc_hhinc, w1_nc_hhincdec1, w1_nc_incgov, w1_nc_hhincsrc1, w1_nc_unemdc, w1_nc_emwrk_isco_c, w1_nc_emtyp,w1_nc_enrgelec, w1_nc_watsrc, w1_nc_nocld, w1_nc_nopres, w1_nc_dwltyp, w1_nc_moveres_apr, w1_nc_prov, w1_nc_edter, w1_nc_edschgrd,w1_nc_best_age_yrs, w1_nc_age_intervals,w1_nc_best_race, w1_nc_empl_stat,w1_nc_geo2011, w1_nc_best_gen, w1_nc_mdbdc2011  FROM nids, derived WHERE pid = derpid")) %>% 
-    collect()
-
-# save dataset as csv:
-
-write.csv(full, "data/full.csv")
-
-```
 
 ----------------------------------------------------------------------
 # Loading Data and Wrangling:
 ----------------------------------------------------------------------
 
 ```{r}
-data <- read.csv("data/full.csv", header = TRUE)
+data <- read.csv("full.csv", header = TRUE)
 
 data <- data %>% 
     select(-c(w1_nc_unemdc, w1_nc_emwrk_isco_c)) %>% #drop vars with too many NAs, captured by two other vars
@@ -232,12 +117,12 @@ data <- dummy_cols(data, select_columns = 'District Council', remove_selected_co
 ## testing with a subsample:
 
 head_impute <- head(data, n = 100)
-imputed_head <- missForest(head_impute, 20, ntree = 500, mtry = 8, verbose = TRUE)
+imputed_head <- missForest(head_impute, 10, ntree = 500, mtry = 8, verbose = TRUE)
 
 imputed_head$ximp %>% view()
 
 
-#testing with parallel (AWS instance)
+#testing with parallel
 p_load("doParallel", "doRNG")
 
 head_impute <- head(data, n = 100)
@@ -256,9 +141,6 @@ imputed_head$ximp %>% view()
 
 ## entire sample:
 
-doParallel::registerDoParallel(cores = 8) # set based on number of CPU cores
-doRNG::registerDoRNG(seed = 123)
-
 tic()
 imputed <-  missForest(data, 3, ntree = 50, mtry = 8, verbose = TRUE, parallelize = "forests")
 toc()
@@ -266,7 +148,7 @@ toc()
 imputed_full <- imputed$ximp
 
 #write imputed data to csv
-write.csv(imputed_full, "data/imputed_full.csv")
+write.csv(imputed_full, "imputed_full.csv")
 
 
 ```
@@ -288,17 +170,17 @@ Want to compute a RF to look at the effect of Lockdown on whether households hav
 ```{r}
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tictoc, parallel, pbapply, future, future.apply,
-    furrr, RhpcBLASctl, memoise, here, caret, ranger, missForest, tidyverse)
+    furrr, RhpcBLASctl, memoise, here, ranger, missForest, tidyverse)
 plan(multisession)
 
 ```
 
 
 ```{r}
+
 #read data in if needed:
-#imputed_full <- read.csv("data/imputed_full.csv", header = TRUE) %>% 
-#    select(-X)
-#str(imputed_full)
+#rf1_data <- read.csv("data/imputed_full.csv", header = TRUE)
+#str(rf1_data)
 
 #change col names:
 
@@ -311,7 +193,8 @@ train <- imputed_full[ind==1,]
 test <- imputed_full[ind==2,]
 
 # Number of features:
-n_features <- length(setdiff(names(imputed_full), "Income.Change"))
+n_features <- length(setdiff(names(imputed_full), "Income Change"))
+
 
 # Random Forest with randomForest package
 library(randomForest)
@@ -332,6 +215,7 @@ print(rf1)
 attributes(rf1)
 
 # Prediction & Confusion Matrix - train data
+library(caret)
 
 p1 <- predict(rf1, train)
 confusionMatrix(p1, train$Income.Change)
@@ -376,11 +260,9 @@ rf1_roc <- roc(train$Income.Change, rf1$votes[,2])
 
 plot(rf1_roc)
 auc(rf1_roc)
-```
 
 
-```{r}
-# Tuning MTRY
+# Tune mtry
 
 p_load(parallelMap, parallel)
 parallelStartSocket (cpus = detectCores())
@@ -393,7 +275,6 @@ t <- tuneRF(train[,-1], train[,1],
        trace = TRUE,
        improve = 0.05)
 toc()
-
 
 ```
 ----------------------------------------------------------------------
@@ -423,10 +304,10 @@ confusionMatrix(p4, test$Income.Change)
 # Error rate of Random Forest
 plot(rf3)
 
-rf3_impplot <- varImpPlot(rf3,
+rf3_impplot <- varImpPlot(rf1,
            sort = T,
            n.var = 10,
-           main = "Tuned RF - Feature Importance")
+           main = "Tuned RF - Variable Importance")
 
 
 imprf3 <- randomForest::importance(rf3)
@@ -444,6 +325,7 @@ MDSrf3train <- MDSplot(rf3, train$Income.Change)
 
 MDSrf3test <- MDSplot(rf3, test$Income.Change)
 
+
 # ROC and AUC curves:
 
 rf3_roc <- roc(train$Income.Change, rf3$votes[,2])
@@ -459,12 +341,6 @@ auc(rf3_roc)
 ----------------------------------------------------------------------
 ######################################################################
 
-Splitting dataset into subsamples, train, test and validation:
-
-
-
-
-
 # Setting Up Grid:
 
 ```{r}
@@ -472,26 +348,27 @@ p_load("gbm")
 
 grid <- expand.grid(n.trees = seq(200,1000,by=50), interaction.depth = seq(1,5,by=2), shrinkage = seq(.01,.09,by=.04), n.minobsinnode = seq (1,30, by = 5)) # grid features
 
-control <- trainControl(method="CV", number = 10) # control - 10-fold cross-validation 
+control <- trainControl(method="CV", number = 10) # control - 10-fold cross-validation
 ```
 ----------------------------------------------------------------------
 # Grid Search for Simple gradient boosted model:
 ----------------------------------------------------------------------
-finding optimal n.trees = 300, 
-interaction.depth = 5, 
-shrinkage = 0.05, 
-n.minobssinnode = 11.
+finding optimal n.trees = 800, 
+interaction.depth = 3, 
+shrinkage = 0.01, 
+n.minobssinnode = 1.
 
 ```{r}
 set.seed(123)
 
-gbm_train <- train(Income.Change~., data=train, method='gbm', trControl=control, tuneGrid=grid)
+tic()
+gbm_train <- train(Income.Change~.,data=train, method='gbm', trControl=control, tuneGrid=grid)
+toc()
 
-gbm_train
+gbm_train 
 
-#Accuracy was used to select the optimal model using the largest value.
-#The final values used for the model were n.trees = 300, interaction.depth
-# = 5, shrinkage = 0.05 and n.minobsinnode = 11.
+
+# this gives optimal values for : n.trees = 300, interaction.depth = 5, shrinkage = 0.05 , n.minobssinnode = 11.
 ```
 
 ----------------------------------------------------------------------
@@ -504,9 +381,9 @@ gbm_train
 train$Income.Change = ifelse(train$Income.Change == "2", 0 , 1)
 
 set.seed(123)
-gbm1 <- gbm(Income.Change~., distribution = 'bernoulli', data=train, n.trees = 300, interaction.depth = 5, shrinkage=.05, n.minobsinnode = 11, cv.folds = 10)
+gbm1 <- gbm(Income.Change~., distribution = 'bernoulli', data=train, n.trees = 300, interaction.depth = 5, shrinkage=.05, n.minobsinnode = 11)
 
-print(gbm1)
+gbm1
 
 ```
 
@@ -514,103 +391,163 @@ print(gbm1)
 # Testing GBM:
 ----------------------------------------------------------------------
 ```{r}
-gbm1test <- predict.gbm(gbm1, newdata = test, type = 'response', n.trees = 300)
+gbm1test <- predict(gbm1, newdata = test, type = 'response', n.trees = 300)
 
 gbmclass <-ifelse(gbm1test < 0.5 ,2 , 1)
 
-resultgbm1 <- table(gbmclass,test$Income.Change)
+table(gbmclass,test$Income.Change)
 
-print(resultgbm1)
-
-### FINAL RESULTS FOR GBM:
-
-cmgbm1 <- confusionMatrix(test$Income.Change, as.factor(gbmclass))  # does not improve on accuracy really, 0.7052381. It's actually lower than model rf3 (0.7124)
-
-# AUC:
-gbm1_roc <- roc(test$Income.Change, gbmclass)
-plot(gbm1_roc)
-auc(gbm1_roc)
-
-roc_both <- c(rf3_roc, gbm1_roc)
-
-#relative importance: 
-
-gbm_impplot_data <- data.frame(gbm_features, gbm_imp)
-names(gbm_impplot_data) <- c("Feature", "Importance")
-
-gbm_features <- c("Sources.Income.Decreased", "HH.Income.Apr", "Province", "Age", "Sources.HH.Income", "Employed", "Employment.Type", "HH.Size", "Education", "Dwelling.Type")
-
-gbm_imp <- c(
-35.45422168,
-15.91035144,
-9.08171754,
-6.31280267,
-4.46397550,
-4.14582225,
-3.94131790,
-3.46126288,
-1.98439985,
-1.67439637)
-
-#Plot:
-
-gbm_impplot_data %>% 
-    mutate(gbm_features = reorder(gbm_features, gbm_imp)) %>% 
-    ggplot()+
-    geom_point(aes(gbm_imp, gbm_features)) +
-    labs(x = "Importance",
-         y = "",
-         title = "GBM Feature Importance")
+gbm1accuracy <-((495 +986)/(495 +394  +225 + 986)) # does not improve on accuracy really, 0.7052381. It's actually lower than model rf3 (0.7124)
 
 ```
 
+
+######################################################################
 ----------------------------------------------------------------------
-### Comparison of Results:
+### MODEL 3: XGBOOST Imputed data - Classification:
+----------------------------------------------------------------------
+######################################################################
+
+
+```{r}
+#data prep:
+
+p_load("recipes", "xgboost")
+
+xgb_prep <- recipe(Income.Change ~ ., data = train) %>%
+    step_integer(all_nominal()) %>%
+    prep(training = train, retain = TRUE) %>%
+    juice()
+
+X <- as.matrix(xgb_prep[setdiff(names(xgb_prep), "Income.Change")])
+
+Y <- xgb_prep$Income.Change
+```
+
+----------------------------------------------------------------------
+### XGB grid searches
 ----------------------------------------------------------------------
 
 ```{r}
+set.seed(123)
+xgb1 <- xgb.cv(
+    data = X,
+    label = Y,
+    nrounds = 5000,
+    objective = "binary:hinge",
+    early_stopping_rounds = 50,
+    eval_metric = "error",
+    nfold = 10,
+    params = list(
+        booster="gbtree",
+        eta = 0.1,
+        max_depth = 3,
+        min_child_weight = 3,
+        subsample = 0.8,
+        colsample_bytree = 1.0),
+    verbose = 0
+)
 
-# descriptive plot:
-
-#dataframe:
-
-comparison_plot <- data.frame(matrix(ncol = 7, nrow = 2))
-metrics <- c("Model", "OOB", "Accuracy", "Kappa", "Sensitivity", "Specificity", "AUC")
-colnames(comparison_plot) <- metrics
-
-comparison_plot[1,1] <- "RF"
-comparison_plot[2,1] <- "GBM"
-
-#RF
-comparison_plot[1,2] <- 0.2845
-comparison_plot[1,3] <- 0.7138 
-comparison_plot[1,4] <- 0.3972
-comparison_plot[1,5] <- 0.5579
-comparison_plot[1,6] <- 0.8282
-comparison_plot[1,7] <- 0.7716
-
-#GBM
-comparison_plot[2,2] <- NA
-comparison_plot[2,3] <- 0.7 
-comparison_plot[2,4] <- 0.3688
-comparison_plot[2,5] <- 0.6821
-comparison_plot[2,6] <- 0.7091
-comparison_plot[2,7] <- 0.6795
-
-comparison_plot %>% 
-    gather(key = "metric", value = "value", Accuracy:AUC) %>% 
-    group_by(Model) %>% 
-    ggplot(aes(metric, value, fill = Model)) +
-    geom_col(alpha = 0.7, colour = "Black", 
-             position = position_dodge(0.7), width = 0.5) +
-    labs(y = "",
-         x = "",
-         title = "Comparison of Confusion Matrix Statistics") +
-    scale_fill_brewer(palette = "Accent") +
-    scale_colour_brewer(palette = "Accent") +
-    geom_text(aes(label = value), vjust = -0.5, size = 2,
-              position=position_dodge(width=0.7))
+min(xgb1$evaluation_log$test_error_mean)
 
 ```
+
+Next, we assess if overfitting is limiting our model’s performance by performing a
+grid search that examines various regularisation parameters
+
+
+```{r}
+# hyperparameter grid
+hyper_grid <- expand.grid(
+    eta = 0.01,
+    max_depth = 3,
+    min_child_weight = 3,
+    subsample = 0.5,
+    colsample_bytree = 0.5,
+    gamma = c(0, 1, 10, 100, 1000),
+    lambda = c(0, 1e-2, 0.1, 1, 100, 1000, 10000),
+    alpha = c(0, 1e-2, 0.1, 1, 100, 1000, 10000),
+    error = 0, # a place to dump error results
+    trees = 0 
+)
+
+```
+
+#Grid search continues
+
+```{r}
+
+#set parallel
+doParallel::registerDoParallel(cores = 8) # set based on number of CPU cores
+doRNG::registerDoRNG(seed = 123)
+
+# grid search
+tic()
+for(i in seq_len(nrow(hyper_grid))){
+  
+    set.seed(123)
+  
+    m <- xgb.cv(data = X,
+      label = Y,
+      nrounds = 5000,
+      objective = "binary:hinge",
+      early_stopping_rounds = 50,
+      eval_metric = "error",
+      nfold = 10,
+      verbose = 0,
+      params = list(
+        booster = "gbtree",
+        eta = hyper_grid$eta[i],
+        max_depth = hyper_grid$max_depth[i],
+        min_child_weight = hyper_grid$min_child_weight[i],
+        subsample = hyper_grid$subsample[i],
+        colsample_bytree = hyper_grid$colsample_bytree[i],
+        gamma = hyper_grid$gamma[i],
+        lambda = hyper_grid$lambda[i],
+        alpha = hyper_grid$alpha[i]
+      )
+    )
+    
+    hyper_grid$error[i] <- min(m$evaluation_log$test_error_mean)
+    hyper_grid$trees[i] <- m$best_iteration
+
+}
+toc()
+
+
+
+
+
+
+```
+
+# Model
+
+
+```{r}
+# optimal parameter list
+params <- list(
+    eta = 0.01,
+    max_depth = 3,
+    min_child_weight = 3,
+    subsample = 0.5,
+    colsample_bytree = 0.5
+)
+
+# train final model
+xgb.fit.final <- xgboost(
+    params = params,
+    data = X,
+    label = Y,
+    nrounds = 3944,
+    objective = "binary:hinge",
+    eval_metric = "error",
+    verbose = 0
+)
+
+
+```
+
+
 
 
