@@ -11,14 +11,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Purpose:
 
-In this project, I attempt to implement a Random Forest on the NidsCram wave 1 data. The purpose is to classify and predict the people/households who were most likely to lose their main source of income due to the lockdown implemented in March 2020. 
+In this project, I attempt to implement and compare a Random Forest and simple GBM on the NIDS-CRAM wave 1 data. The purpose is to classify and predict the people/households who were most likely to lose their main source of income due to the lockdown implemented in March 2020. 
 
 # Files:
 
-* rfnids.rmd is the write up file which creates the pdf report output. 
- 
-* wrangling.rmd is where a local sql database is created and data is cleaned. 
+# rfnids.rmd is the latex file that outputs the final knitted document.
 
-* Model1.rmd computes the first rf model given the data above. 
+# randomforest_income.Rmd is the primary script that includes wrangling, imputation and modelling.
 
-* 
+# Figures are stored in figures folder and data within data folder. The primary full dataset is called full.csv, whilst the imputed dataset, with which analysis is done is callde imputed_full 
